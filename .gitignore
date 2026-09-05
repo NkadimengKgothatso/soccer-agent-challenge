@@ -1,0 +1,18 @@
+﻿# Engine binaries / SDK internals (provided by the course, not yours to track)
+engine/
+student-sdk/soccer/_engine.pyd
+student-sdk/**/*.pyd
+student-sdk/**/*.so
+
+# Match recordings
+replays/*.rep
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS/editor junk
+.vscode/
+.DS_Store
