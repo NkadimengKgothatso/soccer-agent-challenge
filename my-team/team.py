@@ -1,4 +1,4 @@
-"""my-team/team.py — v10
+"""my-team/team.py — v11
 
 v6 turned the balanced record from 5-16-19 into 17-17-6 by carrying the
 ball instead of kicking it away and keeping the collector off; v8 and v9
@@ -13,6 +13,17 @@ concessions, from two leaks v10 closes while keeping the shooting:
     press feeds on exactly those balls, wherever they are played from;
 *   the hoof out of our end only fires when no decent pass is on: a
     score-6 option beats a blind clearance.
+
+v11 ran the 5-a-side formation book against the 200-match grid (the
+3-1 defensive block was left out on principle): the 1-2-1 diamond kept
+it tight but drew too much (78-110-12, 344 pts), the old 2-2 sat
+mid-table (94-89-17, 371 pts), and the 1-3 high line won it — 95-91-14,
+goals 130-24, +0.530, 376 pts. So v11 is the 1-3: one anchor back,
+three outfielders pressed to halfway, so our kickoffs are taken a second
+sooner and theirs is counterpressed at the line instead of at our box.
+The packed-box stall on the hard seeds went with it (4000s: 11-21-8 to
+17-21-2). Open-play roles are unchanged: they are ball-relative, not
+slot-relative.
 
 The rest — collector-off latency, dribble-first carrier, ETA chaser,
 goal-side pressing and marking, crossing-point keeper, restart margins —
@@ -39,7 +50,7 @@ _TICKS = (2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 36, 42)
 
 class MyTeam(TeamController):
     name = "my_team"
-    version = "10"
+    version = "11"
 
     def __init__(self):
         self._attack_hold = 0
@@ -53,10 +64,10 @@ class MyTeam(TeamController):
         gx = field.my_goal[0]
         return [
             (gx + 2.0, 0.0),      # 0: keeper, on the line
-            (gx + 18.0, -13.0),   # 1: left back
-            (gx + 18.0, 13.0),    # 2: right back
-            (gx + 31.0, -6.0),    # 3: left channel, 19 off the spot
-            (gx + 31.0, 6.0),     # 4: right channel
+            (gx + 20.0, 0.0),     # 1: anchor back, the one deep body
+            (gx + 38.0, -14.0),   # 2: high line, left
+            (gx + 39.0, 0.0),     # 3: high line, on the spot's doorstep
+            (gx + 38.0, 14.0),    # 4: high line, right
         ]
 
     # ---------- main loop ----------

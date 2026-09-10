@@ -62,9 +62,31 @@ unless noted. Tuning seeds 1000..1020; the grid adds the unseen ranges
   both baselines outright (72W/75W, 21L each)
 - the 4000s stay hard: attack still stalls against a packed box
 
+## Formation book A/B — v11 (current)
+
+The 5-a-side formation page's shapes, run against the same 200-match grid
+(the 3-1 defensive block was left out on purpose). Only
+`initial_formation` changed; open-play roles are ball-relative, so the
+kickoff shape is the whole difference. 3 points a win, 1 a draw:
+
+| shape | record | goals | GD | pts/200 |
+|---|---|---|---|---|
+| 2-2 (v10) | 94W-89D-17L | 120-31 | +0.445 | 371 |
+| 1-2-1 diamond (v12) | 78W-110D-12L | 127-25 | +0.510 | 344 |
+| **1-3 high line (v11/v13)** | **95W-91D-14L** | **130-24** | **+0.530** | **376** |
+
+- 1-3: keeper, anchor back at x=-30, three pressed to x=-11/-12 — our
+  kickoffs are taken a second sooner, theirs is counterpressed at
+  halfway
+- both aggressive shapes cut concessions (31 -> 24) and fixed the hard
+  4000s range (11-21-8 -> 17-21-2): the packed-box stall was letting
+  them settle deep, and the high line denies the settling
+- diamond keeps losses lowest (12) but draws too much to win points
+- v11 = the 1-3; validate clean (mean 0.062 ms, 0 over deadline)
+- run grids with `powershell -File notes/grid.ps1 <label>`
+
 ## Next
-- attack vs packed box (the 4000s: 11W-21D-8L is the weak range)
 - test vs `possession` and `tactical` baselines for robustness
-- timeout counts vary with machine load (5-77 per 40) — environmental,
-  results are deterministic; consider trimming per-tick work if the
-  grading machine is slower than this one
+- timeout counts vary with machine load — environmental, results are
+  deterministic; consider trimming per-tick work if the grading machine
+  is slower than this one
