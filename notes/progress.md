@@ -85,6 +85,18 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - v11 = the 1-3; validate clean (mean 0.062 ms, 0 over deadline)
 - run grids with `powershell -File notes/grid.ps1 <label>`
 
+## v12/v13 — shooting: the one-on-one rule and the range (current: v13)
+
+- v12: a carrier past every outfield opponent, with only their keeper
+  ahead near his line (x > gx_att - 9), shoots the far post from the
+  keeper's shade immediately — no lane check, no carry. Halved the
+  losses: 100W-93D-7L, 149-23, +0.630, 393 pts
+- v13: measured shot range 28 -> 31. 104W-87D-9L, 160-25, +0.675,
+  399 pts. Range 34 was a wash (163-25 but 397 pts) — 31 is the spot
+- per-range (v13): 1000s 20-18-2 / 29-4, 2000s 23-13-4 / 36-10,
+  3000s 20-20-0 / 34-4, 4000s 18-22-0 / 29-1, 5000s 23-14-3 / 32-6
+- validate: mean 0.074 ms, slowest 0.651 ms, 0 over deadline
+
 ## Next
 - test vs `possession` and `tactical` baselines for robustness
 - timeout counts vary with machine load — environmental, results are

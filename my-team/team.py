@@ -1,4 +1,4 @@
-"""my-team/team.py — v11
+"""my-team/team.py — v13
 
 v6 turned the balanced record from 5-16-19 into 17-17-6 by carrying the
 ball instead of kicking it away and keeping the collector off; v8 and v9
@@ -25,6 +25,14 @@ The packed-box stall on the hard seeds went with it (4000s: 11-21-8 to
 17-21-2). Open-play roles are unchanged: they are ball-relative, not
 slot-relative.
 
+v12 added the one-on-one rule: a carrier past every outfield opponent,
+with only their keeper ahead near his line, shoots the far post
+immediately — he cannot cover both, and carrying on only lets him set
+and the chasers recover. It halved the losses (14 -> 7 in 200) and took
+the grid to 100W-93D-7L, 149-23. v13 pushes the measured shot out to
+31 — 34 was tried and was a wash (397 vs 399 points), so 31 it is —
+for a final 104W-87D-9L, 160-25, +0.675.
+
 The rest — collector-off latency, dribble-first carrier, ETA chaser,
 goal-side pressing and marking, crossing-point keeper, restart margins —
 is v6 unchanged.
@@ -50,7 +58,7 @@ _TICKS = (2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 36, 42)
 
 class MyTeam(TeamController):
     name = "my_team"
-    version = "11"
+    version = "13"
 
     def __init__(self):
         self._attack_hold = 0
@@ -282,7 +290,25 @@ class MyTeam(TeamController):
 
             # 1. the shot: only with measured room to a post
             d_goal = hyp(gx_att - px, -py)
-            if d_goal < 28.0:
+
+            # 1a. one-on-one: past every outfield opponent, only their
+            #     keeper ahead and near his line. He cannot cover both
+            #     posts, so the far one is the shot — taken now, while
+            #     he is still shaded to the near side and the chasers
+            #     are still behind, not after a carry into him
+            if d_goal < 26.0:
+                ahead = [(ox, oy) for (ox, oy) in opp_xy if ox > px - 0.5]
+                if ahead and all(ox > gx_att - 9.0 for (ox, oy) in ahead):
+                    koy = max(ahead, key=lambda o: o[0])[1]
+                    ty_ = -(mouth - 1.5) if koy > 0.0 else (mouth - 1.5)
+                    dx, dy = gx_att - px, ty_ - py
+                    l = hyp(dx, dy) or 1.0
+                    aim = (dx / l, dy / l)
+                    power = clamp(0.55 + d_goal / 45.0, 0.65, 1.0)
+                    actions.kick(pid, aim, power, movement=aim)
+                    return
+
+            if d_goal < 31.0:
                 post = mouth - 1.2
                 best_room, best_ty = -1.0, 0.0
                 for ty_ in (post, -post):
