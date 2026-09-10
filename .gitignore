@@ -4,8 +4,9 @@ student-sdk/soccer/_engine.pyd
 student-sdk/**/*.pyd
 student-sdk/**/*.so
 
-# Match recordings
+# Match recordings / experiment result dumps
 replays/*.rep
+replays/*.jsonl
 
 # Python
 __pycache__/
