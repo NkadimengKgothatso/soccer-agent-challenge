@@ -1,4 +1,4 @@
-"""my-team/team.py — v13
+"""my-team/team.py — v14
 
 v6 turned the balanced record from 5-16-19 into 17-17-6 by carrying the
 ball instead of kicking it away and keeping the collector off; v8 and v9
@@ -36,6 +36,15 @@ for a final 104W-87D-9L, 160-25, +0.675.
 The rest — collector-off latency, dribble-first carrier, ETA chaser,
 goal-side pressing and marking, crossing-point keeper, restart margins —
 is v6 unchanged.
+
+v14 fixes where the shots go. A kick adds its impulse to the ball's own
+velocity, so a ball rolling across the striker (a pass arriving, a touch
+running wide) went where the sum pointed, not at the post: about half of
+v13's "shots" were sailing wide. Shots now point the boot so the sum lands
+on the target. Over seeds 3000-3299 both ends: 3818 -> 4194 points; on
+the held-out 7000-7299: 3812 -> 4169. Compensating passes and touches the
+same way was tried and lost points — their power sizing already assumes
+the ball's own speed — so only the shots use it.
 """
 
 import gc
@@ -58,7 +67,7 @@ _TICKS = (2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 36, 42)
 
 class MyTeam(TeamController):
     name = "my_team"
-    version = "13"
+    version = "14"
 
     def __init__(self):
         self._attack_hold = 0
@@ -97,6 +106,7 @@ class MyTeam(TeamController):
         mouth = f.goal_width * 0.5
         n = len(my)
         actions = TeamAction()
+        imp = f.kick_impulse
 
         ctrl = ball.controlling_player
         theirs_ctrl = ctrl is not None and ctrl >= n
@@ -155,6 +165,24 @@ class MyTeam(TeamController):
                 if d_ < room:
                     room = d_
             return room
+
+        def strike(pid, aim, power, movement):
+            # a kick adds its impulse to the ball's own velocity, so a ball
+            # already rolling across the striker goes where the sum points,
+            # not where the boot does. Point the boot so the sum lands on aim
+            ux, uy = aim
+            k = imp * power
+            uv = bvx * ux + bvy * uy
+            disc = uv * uv - (bvx * bvx + bvy * bvy) + k * k
+            if disc >= 0.0:
+                s = uv + math.sqrt(disc)
+                dx, dy = s * ux - bvx, s * uy - bvy
+            else:
+                dx, dy = ux * k - bvx, uy * k - bvy
+            l = hyp(dx, dy)
+            if l > 1e-6:
+                aim = (dx / l, dy / l)
+            actions.kick(pid, aim, power, movement=movement)
 
         def run_dir(px, py, tx, ty, avoid, ease):
             # unit direction to the target, bent away from close opponents,
@@ -305,7 +333,7 @@ class MyTeam(TeamController):
                     l = hyp(dx, dy) or 1.0
                     aim = (dx / l, dy / l)
                     power = clamp(0.55 + d_goal / 45.0, 0.65, 1.0)
-                    actions.kick(pid, aim, power, movement=aim)
+                    strike(pid, aim, power, aim)
                     return
 
             if d_goal < 31.0:
@@ -322,7 +350,7 @@ class MyTeam(TeamController):
                     l = hyp(dx, dy) or 1.0
                     aim = (dx / l, dy / l)
                     power = clamp(0.55 + d_goal / 45.0, 0.65, 1.0)
-                    actions.kick(pid, aim, power, movement=aim)
+                    strike(pid, aim, power, aim)
                     return
 
             # 2. how much room there is to carry into

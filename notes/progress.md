@@ -108,6 +108,22 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - public seeds 1001..1005 on Linux: balanced 5-2-1 (8-1), possession
   6-2-0 (15-1), tactical 4-1-3 (7-7); validate slowest 0.515 ms
 
+## v14 — shots go where they are aimed (cloud, Linux engine)
+
+- harness: `python3 launch.py tournament` over seeds 3000..3299 (600
+  matches per opponent, both ends); held-out check on 7000..7299
+- v13 baseline: balanced 316-253-31, possession 488-103-9, tactical
+  271-237-92 — 3818 pts
+- finding: a kick *adds* its impulse to the ball's current velocity. A
+  ball rolling across the shooter (arriving pass, a touch running wide)
+  went where the sum pointed, so about half of v13's shots went wide
+- v14: shots point the boot so ball velocity + impulse lands on the
+  target (solve |s*u - v| = impulse*power for s, kick along s*u - v)
+- v14: balanced 408-177-15 (759-53), possession 541-56-3, tactical
+  307-193-100 (574-225) — 4194 pts (+376); held-out 7000s 3812 -> 4169
+- tried and dropped: compensating passes + clearances too (4020), and
+  every touch (3906) — their power sizing already counts the ball's speed
+
 ## Next
 - test vs `possession` and `tactical` baselines for robustness
 - timeout counts vary with machine load — environmental, results are
