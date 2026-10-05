@@ -1,4 +1,4 @@
-"""my-team/team.py — v15
+"""my-team/team.py — v16
 
 v6 turned the balanced record from 5-16-19 into 17-17-6 by carrying the
 ball instead of kicking it away and keeping the collector off; v8 and v9
@@ -53,6 +53,13 @@ through an open lane. 55 includes the kickoff, which tactical's keeper
 cannot hold (tactical 307-193-100 -> 578-21-1); balanced 1401 -> 1445,
 and it helps against man_marking, structured_attack and ball_chaser too.
 Held-out 7000s: 4169 -> 4954.
+
+v16: the lane a shot needs drops from 0.8-1.5 to 0.3 — an accurate,
+full-pace shot through a tight gap still beats the body beside it more
+often than the carry that waits for a better one. Sweep: 1.5 (v15) 4926,
+1.2 5035, 0.6 5073, 0.3 5094, 0.0 5096 over balanced, possession and
+tactical; 0.3 keeps a sanity margin. Held-out 7000s vs balanced,
+man_marking, structured_attack: 4456 -> 4786.
 """
 
 import gc
@@ -75,7 +82,7 @@ _TICKS = (2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 36, 42)
 
 class MyTeam(TeamController):
     name = "my_team"
-    version = "15"
+    version = "16"
 
     def __init__(self):
         self._attack_hold = 0
@@ -351,8 +358,7 @@ class MyTeam(TeamController):
                     room = lane_room(px, py, gx_att, ty_)
                     if room > best_room:
                         best_room, best_ty = room, ty_
-                need = (0.8 if d_goal < 8.0
-                        else 1.4 if d_goal < 14.0 else 1.5)
+                need = 0.3
                 if best_room >= need:
                     dx, dy = gx_att - px, best_ty - py
                     l = hyp(dx, dy) or 1.0
