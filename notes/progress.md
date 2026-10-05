@@ -124,6 +124,48 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - tried and dropped: compensating passes + clearances too (4020), and
   every touch (3906) — their power sizing already counts the ball's speed
 
+## v15 — shot range 31 -> 55
+
+- range sweep on v14 (seeds 3000..3299, bal+poss+tact): 26 -> 4034,
+  31 -> 4194, 36 -> 4440, 40 -> 4560, 45 -> 4595, 55 -> 4926 pts. The
+  lane test still gates every shot
+- 55 covers the kickoff: a full-power shot from the spot beats
+  tactical's keeper, which doesn't shift across (tactical 578-21-1)
+- v15: balanced 436-137-27, possession 564-34-2, tactical 578-21-1 —
+  4926 pts; held-out 7000s: 4954 (v14 4169)
+- also better vs man_marking (135/130W of 200 vs v13's 112),
+  structured_attack (171W vs 132), ball_chaser — not just tactical
+- a margin-gated long shot (only when nobody can reach the path) never
+  fired vs tactical and gained less elsewhere (4208-4275): too strict
+
+## v16 — shoot through tighter lanes (need 0.3) (current)
+
+- lane room a shot needs, on v15 (seeds 3000..3299, bal+poss+tact):
+  1.5 (v15) 4926, +0.04/unit past 25 4870, 1.2 5035, 0.9 5028,
+  1.0 flat 5018, 0.6 5073, 0.3 5094, 0.0 5096
+- v16 = 0.3: balanced 503-89-8 (1159-65), possession 569-27-4,
+  tactical 581-19-0, man_marking 487-104-9, structured_attack 545-45-6
+- held-out 7000s (bal, man_marking, structured_attack): v15 4456 ->
+  v16 4786
+- also tried on v15: shot power always 1.0 (+35), aim mouth-2.0 instead
+  of mouth-1.2 (+48) — inside noise (~+/-50), not taken
+
+## Tried on v16 and not taken (seeds 3000..3199, 5 opponents)
+
+- pool: balanced, man_marking, structured_attack, tactical and the old
+  v13 (a stand-in for a student team whose keeper tracks the crossing
+  point). v16 = 5125 pts; v16 vs v13 goes 189-138-73
+- keeper: crossing-point lookahead 2 -> 4.5 s, ty = by*0.4, keeper
+  deeper at gx+1.0 — better against long shots, worse vs balanced;
+  noise-level overall
+- passes velocity-compensated with power re-sized to the wanted speed:
+  /33 5053, /28 5000
+- pass trigger 16 -> 12 (5104) / 20 (4997); support line +3 (4975)
+- dropping the v12 one-on-one rule: 5181 here, but 7617 vs 7627 on the
+  held-out 7000s — no real difference, kept
+- validate (tactical, 2400 ticks): mean 0.064 ms, slowest 1.97 ms, 0 over
+- check: passes; team.toml still has the example name and student number
+
 ## Next
 - test vs `possession` and `tactical` baselines for robustness
 - timeout counts vary with machine load — environmental, results are
