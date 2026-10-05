@@ -1,4 +1,4 @@
-"""my-team/team.py — v14
+"""my-team/team.py — v15
 
 v6 turned the balanced record from 5-16-19 into 17-17-6 by carrying the
 ball instead of kicking it away and keeping the collector off; v8 and v9
@@ -45,6 +45,14 @@ on the target. Over seeds 3000-3299 both ends: 3818 -> 4194 points; on
 the held-out 7000-7299: 3812 -> 4169. Compensating passes and touches the
 same way was tried and lost points — their power sizing already assumes
 the ball's own speed — so only the shots use it.
+
+v15: with shots now going where they are aimed, the range was the limit.
+31 -> 36 -> 40 -> 45 -> 55 climbed 4194 -> 4440 -> 4560 -> 4595 -> 4926
+points; the lane test still has to pass, so a long shot is only taken
+through an open lane. 55 includes the kickoff, which tactical's keeper
+cannot hold (tactical 307-193-100 -> 578-21-1); balanced 1401 -> 1445,
+and it helps against man_marking, structured_attack and ball_chaser too.
+Held-out 7000s: 4169 -> 4954.
 """
 
 import gc
@@ -67,7 +75,7 @@ _TICKS = (2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 36, 42)
 
 class MyTeam(TeamController):
     name = "my_team"
-    version = "14"
+    version = "15"
 
     def __init__(self):
         self._attack_hold = 0
@@ -336,7 +344,7 @@ class MyTeam(TeamController):
                     strike(pid, aim, power, aim)
                     return
 
-            if d_goal < 31.0:
+            if d_goal < 55.0:
                 post = mouth - 1.2
                 best_room, best_ty = -1.0, 0.0
                 for ty_ in (post, -post):
