@@ -166,6 +166,21 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - validate (tactical, 2400 ticks): mean 0.064 ms, slowest 1.97 ms, 0 over
 - check: passes; team.toml still has the example name and student number
 
+## v17 — every shot at full power (current)
+
+- the real ladder: Division 1 starts near 4075 pts over 1660 matches
+  (~78% wins); the tactical reference sits at 1059, so the baselines are
+  well below the class. New test pool: v16 itself and the old v13 (its
+  keeper tracks the crossing point)
+- on v16 vs the pool (seeds 3000..3299): power 1.0 1825 -> 1976; aim at
+  the post away from their deepest player 1880; aim mouth-2.0 1846
+- held-out 7000s (v16, v13, balanced, tactical): 5255 -> 5379; v13
+  281-222-97 -> 324-209-67; far-post + power 5236 (not taken)
+- keeper crossing point gated on whether the ball reaches the line,
+  instead of within 2 s: 3410 / 3461 vs 3455 — noise, not taken
+- goals v16 concedes to itself come from 10-30 units out (135 of 136),
+  not long shots or kickoffs
+
 ## Next
 - test vs `possession` and `tactical` baselines for robustness
 - timeout counts vary with machine load — environmental, results are

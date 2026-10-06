@@ -1,4 +1,4 @@
-"""my-team/team.py — v16
+"""my-team/team.py — v17
 
 v6 turned the balanced record from 5-16-19 into 17-17-6 by carrying the
 ball instead of kicking it away and keeping the collector off; v8 and v9
@@ -60,6 +60,12 @@ often than the carry that waits for a better one. Sweep: 1.5 (v15) 4926,
 1.2 5035, 0.6 5073, 0.3 5094, 0.0 5096 over balanced, possession and
 tactical; 0.3 keeps a sanity margin. Held-out 7000s vs balanced,
 man_marking, structured_attack: 4456 -> 4786.
+
+v17: every shot at full power. Measured against teams with a keeper that
+tracks the crossing point — v16 itself and the old v13, the closest
+stand-ins for the class — a softer, placed shot is a save: 1825 -> 1976
+over seeds 3000-3299; held-out 7000s (v16, v13, balanced, tactical)
+5255 -> 5379, with v13 going 281-222-97 -> 324-209-67.
 """
 
 import gc
@@ -82,7 +88,7 @@ _TICKS = (2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 36, 42)
 
 class MyTeam(TeamController):
     name = "my_team"
-    version = "16"
+    version = "17"
 
     def __init__(self):
         self._attack_hold = 0
@@ -347,7 +353,7 @@ class MyTeam(TeamController):
                     dx, dy = gx_att - px, ty_ - py
                     l = hyp(dx, dy) or 1.0
                     aim = (dx / l, dy / l)
-                    power = clamp(0.55 + d_goal / 45.0, 0.65, 1.0)
+                    power = 1.0
                     strike(pid, aim, power, aim)
                     return
 
@@ -363,7 +369,7 @@ class MyTeam(TeamController):
                     dx, dy = gx_att - px, best_ty - py
                     l = hyp(dx, dy) or 1.0
                     aim = (dx / l, dy / l)
-                    power = clamp(0.55 + d_goal / 45.0, 0.65, 1.0)
+                    power = 1.0
                     strike(pid, aim, power, aim)
                     return
 
