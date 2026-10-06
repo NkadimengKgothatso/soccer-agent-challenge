@@ -181,6 +181,20 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - goals v16 concedes to itself come from 10-30 units out (135 of 136),
   not long shots or kickoffs
 
+## Tried on v17 and not taken (seeds 3000..3199)
+
+- v17 vs every baseline, 400 matches each: do_nothing 100%, random_legal
+  100%, ball_chaser 98.8%, tactical 97.2%, possession 97.0%,
+  structured_attack 92.0%, balanced 85.5%, man_marking 82.2% — the gaps
+  are 0-0 / 1-0 draws; vs man_marking ~60% of shots are blocked
+- pushing the safety man up when not winning (4 variants): no gain
+- 5 aim points instead of 2: +4 over 5 opponents (noise)
+- coordinate search over 27 constants: 3986 -> 4186 on its own seeds,
+  but held-out 7000s only 7545 -> 7597 (man_marking and v13 slightly
+  worse) — overfitting, not shipped
+- kickoff: pass (ko1) or carry (ko2) instead of the shot — tactical
+  97% -> 80%; the shot stays
+
 ## Next
 - test vs `possession` and `tactical` baselines for robustness
 - timeout counts vary with machine load — environmental, results are
