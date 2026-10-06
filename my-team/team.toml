@@ -7,7 +7,7 @@
 
 [team]
 # Shown on the leaderboard. 1-40 characters: letters, digits, spaces . _ ' & ( ) + -
-name = "My Team"
+name = "Kgothatso Nkadimeng"
 
 # Bump this when you change your tactics, so you can tell your runs apart.
 version = "16"
@@ -18,5 +18,5 @@ version = "16"
 
 # One [[members]] block per person. Copy the whole block for a partner.
 [[members]]
-name = "Your Name"
-student_number = "2412345"
+name = "Kgothatso Nkadimeng"
+student_number = "2840850"
