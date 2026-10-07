@@ -108,6 +108,93 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - public seeds 1001..1005 on Linux: balanced 5-2-1 (8-1), possession
   6-2-0 (15-1), tactical 4-1-3 (7-7); validate slowest 0.515 ms
 
+## v14 — shots go where they are aimed (cloud, Linux engine)
+
+- harness: `python3 launch.py tournament` over seeds 3000..3299 (600
+  matches per opponent, both ends); held-out check on 7000..7299
+- v13 baseline: balanced 316-253-31, possession 488-103-9, tactical
+  271-237-92 — 3818 pts
+- finding: a kick *adds* its impulse to the ball's current velocity. A
+  ball rolling across the shooter (arriving pass, a touch running wide)
+  went where the sum pointed, so about half of v13's shots went wide
+- v14: shots point the boot so ball velocity + impulse lands on the
+  target (solve |s*u - v| = impulse*power for s, kick along s*u - v)
+- v14: balanced 408-177-15 (759-53), possession 541-56-3, tactical
+  307-193-100 (574-225) — 4194 pts (+376); held-out 7000s 3812 -> 4169
+- tried and dropped: compensating passes + clearances too (4020), and
+  every touch (3906) — their power sizing already counts the ball's speed
+
+## v15 — shot range 31 -> 55
+
+- range sweep on v14 (seeds 3000..3299, bal+poss+tact): 26 -> 4034,
+  31 -> 4194, 36 -> 4440, 40 -> 4560, 45 -> 4595, 55 -> 4926 pts. The
+  lane test still gates every shot
+- 55 covers the kickoff: a full-power shot from the spot beats
+  tactical's keeper, which doesn't shift across (tactical 578-21-1)
+- v15: balanced 436-137-27, possession 564-34-2, tactical 578-21-1 —
+  4926 pts; held-out 7000s: 4954 (v14 4169)
+- also better vs man_marking (135/130W of 200 vs v13's 112),
+  structured_attack (171W vs 132), ball_chaser — not just tactical
+- a margin-gated long shot (only when nobody can reach the path) never
+  fired vs tactical and gained less elsewhere (4208-4275): too strict
+
+## v16 — shoot through tighter lanes (need 0.3) (current)
+
+- lane room a shot needs, on v15 (seeds 3000..3299, bal+poss+tact):
+  1.5 (v15) 4926, +0.04/unit past 25 4870, 1.2 5035, 0.9 5028,
+  1.0 flat 5018, 0.6 5073, 0.3 5094, 0.0 5096
+- v16 = 0.3: balanced 503-89-8 (1159-65), possession 569-27-4,
+  tactical 581-19-0, man_marking 487-104-9, structured_attack 545-45-6
+- held-out 7000s (bal, man_marking, structured_attack): v15 4456 ->
+  v16 4786
+- also tried on v15: shot power always 1.0 (+35), aim mouth-2.0 instead
+  of mouth-1.2 (+48) — inside noise (~+/-50), not taken
+
+## Tried on v16 and not taken (seeds 3000..3199, 5 opponents)
+
+- pool: balanced, man_marking, structured_attack, tactical and the old
+  v13 (a stand-in for a student team whose keeper tracks the crossing
+  point). v16 = 5125 pts; v16 vs v13 goes 189-138-73
+- keeper: crossing-point lookahead 2 -> 4.5 s, ty = by*0.4, keeper
+  deeper at gx+1.0 — better against long shots, worse vs balanced;
+  noise-level overall
+- passes velocity-compensated with power re-sized to the wanted speed:
+  /33 5053, /28 5000
+- pass trigger 16 -> 12 (5104) / 20 (4997); support line +3 (4975)
+- dropping the v12 one-on-one rule: 5181 here, but 7617 vs 7627 on the
+  held-out 7000s — no real difference, kept
+- validate (tactical, 2400 ticks): mean 0.064 ms, slowest 1.97 ms, 0 over
+- check: passes; team.toml still has the example name and student number
+
+## v17 — every shot at full power (current)
+
+- the real ladder: Division 1 starts near 4075 pts over 1660 matches
+  (~78% wins); the tactical reference sits at 1059, so the baselines are
+  well below the class. New test pool: v16 itself and the old v13 (its
+  keeper tracks the crossing point)
+- on v16 vs the pool (seeds 3000..3299): power 1.0 1825 -> 1976; aim at
+  the post away from their deepest player 1880; aim mouth-2.0 1846
+- held-out 7000s (v16, v13, balanced, tactical): 5255 -> 5379; v13
+  281-222-97 -> 324-209-67; far-post + power 5236 (not taken)
+- keeper crossing point gated on whether the ball reaches the line,
+  instead of within 2 s: 3410 / 3461 vs 3455 — noise, not taken
+- goals v16 concedes to itself come from 10-30 units out (135 of 136),
+  not long shots or kickoffs
+
+## Tried on v17 and not taken (seeds 3000..3199)
+
+- v17 vs every baseline, 400 matches each: do_nothing 100%, random_legal
+  100%, ball_chaser 98.8%, tactical 97.2%, possession 97.0%,
+  structured_attack 92.0%, balanced 85.5%, man_marking 82.2% — the gaps
+  are 0-0 / 1-0 draws; vs man_marking ~60% of shots are blocked
+- pushing the safety man up when not winning (4 variants): no gain
+- 5 aim points instead of 2: +4 over 5 opponents (noise)
+- coordinate search over 27 constants: 3986 -> 4186 on its own seeds,
+  but held-out 7000s only 7545 -> 7597 (man_marking and v13 slightly
+  worse) — overfitting, not shipped
+- kickoff: pass (ko1) or carry (ko2) instead of the shot — tactical
+  97% -> 80%; the shot stays
+
 ## Next
 - test vs `possession` and `tactical` baselines for robustness
 - timeout counts vary with machine load — environmental, results are

@@ -1,4 +1,4 @@
-"""my-team/team.py — v13
+"""my-team/team.py — v17
 
 v6 turned the balanced record from 5-16-19 into 17-17-6 by carrying the
 ball instead of kicking it away and keeping the collector off; v8 and v9
@@ -36,6 +36,36 @@ for a final 104W-87D-9L, 160-25, +0.675.
 The rest — collector-off latency, dribble-first carrier, ETA chaser,
 goal-side pressing and marking, crossing-point keeper, restart margins —
 is v6 unchanged.
+
+v14 fixes where the shots go. A kick adds its impulse to the ball's own
+velocity, so a ball rolling across the striker (a pass arriving, a touch
+running wide) went where the sum pointed, not at the post: about half of
+v13's "shots" were sailing wide. Shots now point the boot so the sum lands
+on the target. Over seeds 3000-3299 both ends: 3818 -> 4194 points; on
+the held-out 7000-7299: 3812 -> 4169. Compensating passes and touches the
+same way was tried and lost points — their power sizing already assumes
+the ball's own speed — so only the shots use it.
+
+v15: with shots now going where they are aimed, the range was the limit.
+31 -> 36 -> 40 -> 45 -> 55 climbed 4194 -> 4440 -> 4560 -> 4595 -> 4926
+points; the lane test still has to pass, so a long shot is only taken
+through an open lane. 55 includes the kickoff, which tactical's keeper
+cannot hold (tactical 307-193-100 -> 578-21-1); balanced 1401 -> 1445,
+and it helps against man_marking, structured_attack and ball_chaser too.
+Held-out 7000s: 4169 -> 4954.
+
+v16: the lane a shot needs drops from 0.8-1.5 to 0.3 — an accurate,
+full-pace shot through a tight gap still beats the body beside it more
+often than the carry that waits for a better one. Sweep: 1.5 (v15) 4926,
+1.2 5035, 0.6 5073, 0.3 5094, 0.0 5096 over balanced, possession and
+tactical; 0.3 keeps a sanity margin. Held-out 7000s vs balanced,
+man_marking, structured_attack: 4456 -> 4786.
+
+v17: every shot at full power. Measured against teams with a keeper that
+tracks the crossing point — v16 itself and the old v13, the closest
+stand-ins for the class — a softer, placed shot is a save: 1825 -> 1976
+over seeds 3000-3299; held-out 7000s (v16, v13, balanced, tactical)
+5255 -> 5379, with v13 going 281-222-97 -> 324-209-67.
 """
 
 import gc
@@ -58,7 +88,7 @@ _TICKS = (2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 36, 42)
 
 class MyTeam(TeamController):
     name = "my_team"
-    version = "13"
+    version = "17"
 
     def __init__(self):
         self._attack_hold = 0
@@ -97,6 +127,7 @@ class MyTeam(TeamController):
         mouth = f.goal_width * 0.5
         n = len(my)
         actions = TeamAction()
+        imp = f.kick_impulse
 
         ctrl = ball.controlling_player
         theirs_ctrl = ctrl is not None and ctrl >= n
@@ -155,6 +186,24 @@ class MyTeam(TeamController):
                 if d_ < room:
                     room = d_
             return room
+
+        def strike(pid, aim, power, movement):
+            # a kick adds its impulse to the ball's own velocity, so a ball
+            # already rolling across the striker goes where the sum points,
+            # not where the boot does. Point the boot so the sum lands on aim
+            ux, uy = aim
+            k = imp * power
+            uv = bvx * ux + bvy * uy
+            disc = uv * uv - (bvx * bvx + bvy * bvy) + k * k
+            if disc >= 0.0:
+                s = uv + math.sqrt(disc)
+                dx, dy = s * ux - bvx, s * uy - bvy
+            else:
+                dx, dy = ux * k - bvx, uy * k - bvy
+            l = hyp(dx, dy)
+            if l > 1e-6:
+                aim = (dx / l, dy / l)
+            actions.kick(pid, aim, power, movement=movement)
 
         def run_dir(px, py, tx, ty, avoid, ease):
             # unit direction to the target, bent away from close opponents,
@@ -304,25 +353,24 @@ class MyTeam(TeamController):
                     dx, dy = gx_att - px, ty_ - py
                     l = hyp(dx, dy) or 1.0
                     aim = (dx / l, dy / l)
-                    power = clamp(0.55 + d_goal / 45.0, 0.65, 1.0)
-                    actions.kick(pid, aim, power, movement=aim)
+                    power = 1.0
+                    strike(pid, aim, power, aim)
                     return
 
-            if d_goal < 31.0:
+            if d_goal < 55.0:
                 post = mouth - 1.2
                 best_room, best_ty = -1.0, 0.0
                 for ty_ in (post, -post):
                     room = lane_room(px, py, gx_att, ty_)
                     if room > best_room:
                         best_room, best_ty = room, ty_
-                need = (0.8 if d_goal < 8.0
-                        else 1.4 if d_goal < 14.0 else 1.5)
+                need = 0.3
                 if best_room >= need:
                     dx, dy = gx_att - px, best_ty - py
                     l = hyp(dx, dy) or 1.0
                     aim = (dx / l, dy / l)
-                    power = clamp(0.55 + d_goal / 45.0, 0.65, 1.0)
-                    actions.kick(pid, aim, power, movement=aim)
+                    power = 1.0
+                    strike(pid, aim, power, aim)
                     return
 
             # 2. how much room there is to carry into
