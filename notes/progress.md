@@ -195,6 +195,21 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - kickoff: pass (ko1) or carry (ko2) instead of the shot — tactical
   97% -> 80%; the shot stays
 
+## v18 candidate: close-control dribbling (candidates/v18-dribble, not submitted)
+
+The ladder (#90, division 5, 1989 pts) showed v17 at 3% ball control and 9 dribbles a match against the top teams' 34% and 148, losing 0-10 to each of the top ten. A dribble touch that sets the ball's velocity to the carrier's stride (instead of adding a 0.18-0.42 touch on top) took control to 20-40% and dribbles to 60-150. What it changed locally:
+
+| variant (seeds 3000-3149, both ends) | v17 | v13 | balanced | dribbler s25 | total |
+| --- | --- | --- | --- | --- | --- |
+| v17 | 424 | 556 | 806 | 382 | |
+| dribble, range 25 | 448 | 574 | 741 | 423 | |
+| + passes only when pressed | 406 | 610 | 759 | 394 | |
+| + shot only if nobody can reach its path (sm25) | 432 | 617 | 805 | 421 | |
+
+Held-out 7000-7099: v17 gets 267 from v17 and 300 from sm25; sm25 gets 260 from v17 and only 340 from tactical (no kickoff shot). With the kickoff shot back (the candidate): v17 251, sm25 290, tactical 588. So it plays like the top teams but is not stronger than v17 against anything we have locally.
+
+Tried and level within noise: dribble speed 6/7/8, lead 1.2/1.6, gain 1/2/3, protect speed 2/4, range 20/25/28/32/40, shielding the ball from the nearest body (weights 1.5, 3.0), reach-checked shots out to 40.
+
 ## Next
 - test vs `possession` and `tactical` baselines for robustness
 - timeout counts vary with machine load — environmental, results are
