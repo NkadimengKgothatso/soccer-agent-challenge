@@ -195,6 +195,26 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - kickoff: pass (ko1) or carry (ko2) instead of the shot — tactical
   97% -> 80%; the shot stays
 
+## v19 — keeper on the angle bisector (cloud, Linux engine, 2026-10-10)
+
+- the site is still blocked from the cloud sandbox (proxy 403), so no new
+  ladder data
+- new sparring partner: the engine ships a hidden `elite` baseline
+  (not in `baselines`, reachable through `soccer.runner._run_fixture`).
+  v17 is level with it (72-63-65), and it punishes the v18 dribbler
+  (31-58-111), so it separates candidates the other baselines can't
+- pool from now on: elite, v18-dribble, v17, man_marking, balanced
+  (seeds 3000..3099 both ends, 1000 matches; held-out 7000..7099)
+- v17 on the pool: 1919 pts (conceded 520); held-out 1896 (531)
+- tried on v17: keeper crossing lookahead 2 -> 4 s 1888, shot range
+  55 -> 35 1680, lane need 0.3 -> 1.0 1825, tackle goal-side offset
+  1.5 -> 0.5 1895 — none taken
+- v19: keeper stands on the bisector of the ball-to-posts angle instead
+  of y = 0.55*by: 2001 (conceded 410); held-out 1944 (435). elite
+  264, v18 356, v17 276, man_marking 533, balanced 515
+- on v19, within noise: keeper depth 2.5 (1958) / 1.0 (2002), rush
+  zone 8 (2002) / 16 (2012), wider post clamp (1999)
+
 ## Next
 - test vs `possession` and `tactical` baselines for robustness
 - timeout counts vary with machine load — environmental, results are
