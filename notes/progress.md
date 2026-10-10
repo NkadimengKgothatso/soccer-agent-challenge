@@ -247,6 +247,18 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - also on v20 and not taken: keeper plays out with a reach-checked pass
   (1960-2014), carry along the most open of 7 headings (1908-2014)
 
+## Second search on v22 (not taken)
+
+- 26 constants again on v22 (pool 2170): only the safety man at bx-10
+  (was bx-14) cleared +25 (2212), but held-out 7000s fell 2184 -> 2122
+- also level on the pool: hoof at full power 2166, pass power 0.95 2170,
+  pass range 50 2170
+- v22 sits at a local optimum for its constants; the next gains need a
+  structural change, or real class data from the ladder
+- tools for this pool are in the project folder: notes/claude-tools/
+  cloud-*.py (ev = per-opponent record incl. `elite`, search = coordinate
+  search, kicks = outcome of each kick type, goals = where goals come from)
+
 ## Next
 - test vs `possession` and `tactical` baselines for robustness
 - timeout counts vary with machine load — environmental, results are
