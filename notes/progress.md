@@ -215,6 +215,24 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - on v19, within noise: keeper depth 2.5 (1958) / 1.0 (2002), rush
   zone 8 (2002) / 16 (2012), wider post clamp (1999)
 
+## v20 — passes chosen by who reaches the ball first
+
+- tried on v19 (pool 3000..3099): pass trigger 16 -> 12 2024 (held-out
+  1911), markers held to bx+6 2033 (held-out 1943), tighter marking
+  1900, closer cover 1838, wider one-on-one zone 1990, deeper safety
+  1949 — none taken
+- kick log vs elite: shots from 30+ units go to their side ~11 times a
+  match for 0.02 goals, but reach-checking long shots (only shoot from
+  past 20/25/30 if nobody can reach the path) costs 230-410 pts: the
+  carry that replaces them is worse than a rebound in their half
+- v20: every pass candidate (mate now or 1 s ahead, power 0.55/0.8) is
+  rolled forward with the real kick physics until the receiver reaches
+  it; kept only if no opponent can reach the path first; score = gain +
+  1.5 * margin (cap 4). Trigger 10: pool 2054 (v19 2001), held-out 2003
+  (v19 1944): elite 282, v18 383, v17 269, man_marking 554, balanced 515
+- same family on the pool: margin 1.0 2018, trigger 16 2017 / 22 2049
+  (held-out 1981), powers 0.6/0.95 + margin -0.5 2005
+
 ## Next
 - test vs `possession` and `tactical` baselines for robustness
 - timeout counts vary with machine load — environmental, results are
