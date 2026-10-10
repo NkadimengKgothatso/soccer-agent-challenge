@@ -83,7 +83,7 @@ score reaches 10. Pool 2001 -> 2054, held-out 1944 -> 2003.
 
 v21: the keeper's clearance goes at full power instead of 0.8, so it
 clears their press instead of landing on it: held-out 2003 -> 2113,
-elite 282 -> 300, conceded 448 -> 349.
+elite 282 -> 300, conceded 418 -> 349.
 
 v22: the chaser's reach is timed at full speed (factor 1.0, was 0.9), so
 the nearest man commits to balls he can really win: held-out 2113 ->
