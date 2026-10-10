@@ -1,4 +1,4 @@
-"""my-team/team.py — v21
+"""my-team/team.py — v22
 
 v6 turned the balanced record from 5-16-19 into 17-17-6 by carrying the
 ball instead of kicking it away and keeping the collector off; v8 and v9
@@ -84,6 +84,10 @@ score reaches 10. Pool 2001 -> 2054, held-out 1944 -> 2003.
 v21: the keeper's clearance goes at full power instead of 0.8, so it
 clears their press instead of landing on it: held-out 2003 -> 2113,
 elite 282 -> 300, conceded 448 -> 349.
+
+v22: the chaser's reach is timed at full speed (factor 1.0, was 0.9), so
+the nearest man commits to balls he can really win: held-out 2113 ->
+2184, pool 2170.
 """
 
 import gc
@@ -110,7 +114,7 @@ _TICKS = (2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 36, 42)
 
 class MyTeam(TeamController):
     name = "my_team"
-    version = "21"
+    version = "22"
 
     def __init__(self):
         self._attack_hold = 0
@@ -181,13 +185,13 @@ class MyTeam(TeamController):
         def eta(px, py):
             # seconds until this player can first get a boot on the ball
             for (t, x_, y_) in preds:
-                if hyp(x_ - px, y_ - py) <= vmax * t * dt * 0.9 + 1.5:
+                if hyp(x_ - px, y_ - py) <= vmax * t * dt * 1.0 + 1.5:
                     return t * dt
             return hyp(bx - px, by - py) / vmax + 0.15
 
         def meet(px, py):
             for (t, x_, y_) in preds:
-                if hyp(x_ - px, y_ - py) <= vmax * t * dt * 0.9 + 1.5:
+                if hyp(x_ - px, y_ - py) <= vmax * t * dt * 1.0 + 1.5:
                     return (x_, y_)
             return (bx, by)
 
