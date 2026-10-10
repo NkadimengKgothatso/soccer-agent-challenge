@@ -195,6 +195,58 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - kickoff: pass (ko1) or carry (ko2) instead of the shot — tactical
   97% -> 80%; the shot stays
 
+## v19 — keeper on the angle bisector (cloud, Linux engine, 2026-10-10)
+
+- the site is still blocked from the cloud sandbox (proxy 403), so no new
+  ladder data
+- new sparring partner: the engine ships a hidden `elite` baseline
+  (not in `baselines`, reachable through `soccer.runner._run_fixture`).
+  v17 is level with it (72-63-65), and it punishes the v18 dribbler
+  (31-58-111), so it separates candidates the other baselines can't
+- pool from now on: elite, v18-dribble, v17, man_marking, balanced
+  (seeds 3000..3099 both ends, 1000 matches; held-out 7000..7099)
+- v17 on the pool: 1919 pts (conceded 520); held-out 1896 (531)
+- tried on v17: keeper crossing lookahead 2 -> 4 s 1888, shot range
+  55 -> 35 1680, lane need 0.3 -> 1.0 1825, tackle goal-side offset
+  1.5 -> 0.5 1895 — none taken
+- v19: keeper stands on the bisector of the ball-to-posts angle instead
+  of y = 0.55*by: 2001 (conceded 410); held-out 1944 (435). elite
+  264, v18 356, v17 276, man_marking 533, balanced 515
+- on v19, within noise: keeper depth 2.5 (1958) / 1.0 (2002), rush
+  zone 8 (2002) / 16 (2012), wider post clamp (1999)
+
+## v20 — passes chosen by who reaches the ball first
+
+- tried on v19 (pool 3000..3099): pass trigger 16 -> 12 2024 (held-out
+  1911), markers held to bx+6 2033 (held-out 1943), tighter marking
+  1900, closer cover 1838, wider one-on-one zone 1990, deeper safety
+  1949 — none taken
+- kick log vs elite: shots from 30+ units go to their side ~11 times a
+  match for 0.02 goals, but reach-checking long shots (only shoot from
+  past 20/25/30 if nobody can reach the path) costs 230-410 pts: the
+  carry that replaces them is worse than a rebound in their half
+- v20: every pass candidate (mate now or 1 s ahead, power 0.55/0.8) is
+  rolled forward with the real kick physics until the receiver reaches
+  it; kept only if no opponent can reach the path first; score = gain +
+  1.5 * margin (cap 4). Trigger 10: pool 2054 (v19 2001), held-out 2003
+  (v19 1944): elite 282, v18 383, v17 269, man_marking 554, balanced 515
+- same family on the pool: margin 1.0 2018, trigger 16 2017 / 22 2049
+  (held-out 1981), powers 0.6/0.95 + margin -0.5 2005
+
+## v21/v22 — from a constant search on the elite pool
+
+- coordinate search on v20 over 26 constants (pool seeds 3000..3099, one
+  step each way, accept at +25). Accepted: chaser ETA reach factor
+  0.9 -> 1.0 (2080), keeper clearance power 0.8 -> 1.0 (2170), protect
+  touch 0.22 -> 0.15 (2201). Everything else was at or below v20
+- held-out 7000..7099, each change checked on its own:
+  - v21 = keeper clears at full power: 2003 -> 2113 (elite 300, v18
+    403, v17 329, man_marking 552, balanced 529)
+  - v22 = v21 + ETA factor 1.0: 2184 (pool 2170)
+  - v21 + touch 0.15: 2087 (pool 2015) — not taken
+- also on v20 and not taken: keeper plays out with a reach-checked pass
+  (1960-2014), carry along the most open of 7 headings (1908-2014)
+
 ## Next
 - test vs `possession` and `tactical` baselines for robustness
 - timeout counts vary with machine load — environmental, results are

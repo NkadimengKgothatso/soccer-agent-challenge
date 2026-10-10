@@ -1,4 +1,4 @@
-"""my-team/team.py — v17
+"""my-team/team.py — v22
 
 v6 turned the balanced record from 5-16-19 into 17-17-6 by carrying the
 ball instead of kicking it away and keeping the collector off; v8 and v9
@@ -66,6 +66,28 @@ tracks the crossing point — v16 itself and the old v13, the closest
 stand-ins for the class — a softer, placed shot is a save: 1825 -> 1976
 over seeds 3000-3299; held-out 7000s (v16, v13, balanced, tactical)
 5255 -> 5379, with v13 going 281-222-97 -> 324-209-67.
+
+v19: the keeper stands on the bisector of the angle the ball makes with
+the two posts, instead of at 0.55 of the ball's y. Against the engine's
+`elite` side, the v18 dribbler and v17 itself (seeds 3000-3099 and
+held-out 7000-7099, both ends) it concedes about a fifth fewer goals:
+531 -> 435 conceded over 1000 held-out matches, 1896 -> 1944 pts.
+
+v20: a pass is chosen by who gets to the ball first. Each candidate (a
+mate where he is or a second ahead of his run, at power 0.55 or 0.8) is
+rolled forward with the real kick physics — the impulse adds to the
+ball's velocity — until the receiver can reach it; it is kept only if no
+opponent can get a boot on the path before then, and scored by the
+ground it gains plus the margin. Passes go when pressed or when the
+score reaches 10. Pool 2001 -> 2054, held-out 1944 -> 2003.
+
+v21: the keeper's clearance goes at full power instead of 0.8, so it
+clears their press instead of landing on it: held-out 2003 -> 2113,
+elite 282 -> 300, conceded 418 -> 349.
+
+v22: the chaser's reach is timed at full speed (factor 1.0, was 0.9), so
+the nearest man commits to balls he can really win: held-out 2113 ->
+2184, pool 2170.
 """
 
 import gc
@@ -83,12 +105,16 @@ _HYP = math.hypot
 # Ball prediction horizons, in ticks: fine through the first half-second
 # (where most duels are settled), coarser out to the two seconds a pass
 # spends rolling. Twelve points keep the ETA pass over both teams cheap.
+# pass powers tried, the reach margin a pass needs, and the score at which
+# an unpressed carrier passes rather than carries
+PASS_P1, PASS_P2, PASS_M, PASS_T = 0.55, 0.8, 0.0, 10.0
+
 _TICKS = (2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 36, 42)
 
 
 class MyTeam(TeamController):
     name = "my_team"
-    version = "17"
+    version = "22"
 
     def __init__(self):
         self._attack_hold = 0
@@ -159,13 +185,13 @@ class MyTeam(TeamController):
         def eta(px, py):
             # seconds until this player can first get a boot on the ball
             for (t, x_, y_) in preds:
-                if hyp(x_ - px, y_ - py) <= vmax * t * dt * 0.9 + 1.5:
+                if hyp(x_ - px, y_ - py) <= vmax * t * dt * 1.0 + 1.5:
                     return t * dt
             return hyp(bx - px, by - py) / vmax + 0.15
 
         def meet(px, py):
             for (t, x_, y_) in preds:
-                if hyp(x_ - px, y_ - py) <= vmax * t * dt * 0.9 + 1.5:
+                if hyp(x_ - px, y_ - py) <= vmax * t * dt * 1.0 + 1.5:
                     return (x_, y_)
             return (bx, by)
 
@@ -399,44 +425,66 @@ class MyTeam(TeamController):
                 if gx_att - 6.0 > ox > max_opp_x:
                     max_opp_x = ox
             best = None
-            for mate in my:
-                if mate.id == pid:
-                    continue
+            fr = getattr(f, "ball_friction", 0.985)
+            mates = [m for m in my if m.id != pid]
+            for mate in mates:
+                mx, my_ = mate.position
                 mvx, mvy = mate.velocity
-                lx = clamp(mate.position[0] + mvx * 1.8, -half_w, half_w)
-                ly = clamp(mate.position[1] + mvy * 1.8, -half_h, half_h)
-                d_ = hyp(lx - px, ly - py)
-                if d_ < 8.0 or d_ > 34.0:
-                    continue
-                room = lane_room(px, py, lx, ly)
-                need = 2.0 + d_ * 0.07
-                if room < need:
-                    continue
-                opp_land = 15.0
-                for (ox, oy) in opp_xy:
-                    d2_ = hyp(ox - lx, oy - ly)
-                    if d2_ < opp_land:
-                        opp_land = d2_
-                if opp_land < 2.6:
-                    continue
-                gain = lx - px
-                score = gain + room * 0.5 + min(opp_land, 8.0) * 0.4 - d_ * 0.1
-                if lx > max_opp_x + 1.0 and gain > 8.0:
-                    score += 6.0      # releases a runner behind their line
-                if gain < 0.0 and not desperate:
-                    score -= 6.0
-                if best is None or score > best[0]:
-                    best = (score, (lx - px) / d_, (ly - py) / d_, d_)
+                for lead in (0.0, 1.0):
+                    lx = clamp(mx + mvx * lead, -half_w, half_w)
+                    ly = clamp(my_ + mvy * lead, -half_h, half_h)
+                    d_ = hyp(lx - px, ly - py)
+                    if d_ < 6.0 or d_ > 40.0:
+                        continue
+                    ux, uy = (lx - px) / d_, (ly - py) / d_
+                    for power in (PASS_P1, PASS_P2):
+                        # where the ball really goes: the kick adds to the
+                        # ball's own velocity, capped at 30
+                        vx_ = bvx + ux * imp * power
+                        vy_ = bvy + uy * imp * power
+                        sp = hyp(vx_, vy_)
+                        if sp > 30.0:
+                            vx_, vy_ = vx_ * 30.0 / sp, vy_ * 30.0 / sp
+                        x_, y_ = bx, by
+                        margin = 99.0
+                        recv = None
+                        for k in range(1, 61):
+                            x_ += vx_ * dt
+                            y_ += vy_ * dt
+                            vx_ *= fr
+                            vy_ *= fr
+                            if not (-half_w < x_ < half_w and -half_h < y_ < half_h):
+                                break
+                            if k % 2:
+                                continue
+                            t = k * dt
+                            run = vmax * t
+                            if hyp(mx - x_, my_ - y_) <= 1.6 + run * 0.9:
+                                recv = (x_, y_)
+                                break
+                            for (ox, oy) in opp_xy:
+                                g = hyp(ox - x_, oy - y_) - 2.2 - run
+                                if g < margin:
+                                    margin = g
+                            if margin < PASS_M:
+                                break
+                        if recv is None or margin < PASS_M:
+                            continue
+                        rx, ry = recv
+                        gain = rx - px
+                        score = gain + min(margin, 4.0) * 1.5
+                        if rx > max_opp_x + 1.0 and gain > 8.0:
+                            score += 6.0      # releases a runner behind their line
+                        if gain < 0.0 and not desperate:
+                            score -= 6.0
+                        if best is None or score > best[0]:
+                            best = (score, ux, uy, power)
 
             def take_pass():
-                _, ux, uy, d_ = best
-                bv = bvx * ux + bvy * uy
-                if bv < 0.0:
-                    bv = 0.0
-                power = clamp((d_ - bv * 0.8) / 33.0, 0.5, 0.9)
+                _, ux, uy, power = best
                 actions.kick(pid, (ux, uy), power, movement=(ux, uy))
 
-            if best is not None and (space < 4.5 or best[0] >= 16.0):
+            if best is not None and (space < 4.5 or best[0] >= PASS_T):
                 take_pass()
                 return
 
@@ -498,7 +546,7 @@ class MyTeam(TeamController):
             dx, dy = tx_ - px, ty_ - py
             l = hyp(dx, dy) or 1.0
             aim = (dx / l, dy / l)
-            actions.kick(p.id, aim, 0.8, movement=aim)
+            actions.kick(p.id, aim, 1.0, movement=aim)
 
         # -- one action per player, every tick ---------------------------
         for p in my:
@@ -513,10 +561,22 @@ class MyTeam(TeamController):
                         tx, ty = meet(kx, ky)
                         actions.move(pid, run_dir(px, py, tx, ty, 0.0, 1.0))
                 else:
-                    # cover where the ball would cross the line, not where
-                    # it is now
+                    # stand on the bisector of the angle the ball makes
+                    # with the two posts, and cover where the ball would
+                    # cross the line when it is already on its way
                     tx = gx_def + 1.6
-                    ty = by * 0.55
+                    a1 = math.atan2(mouth - by, gx_def - bx)
+                    a2 = math.atan2(-mouth - by, gx_def - bx)
+                    if a1 < 0.0:
+                        a1 += 2.0 * math.pi
+                    if a2 < 0.0:
+                        a2 += 2.0 * math.pi
+                    am = 0.5 * (a1 + a2)
+                    ca = math.cos(am)
+                    if ca < -0.05:
+                        ty = by + math.sin(am) / ca * (tx - bx)
+                    else:
+                        ty = by * 0.55
                     if bvx < -2.5 and bx > tx:
                         tc = (tx - bx) / bvx
                         if 0.0 < tc < 2.0:
