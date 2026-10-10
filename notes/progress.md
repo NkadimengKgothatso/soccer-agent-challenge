@@ -233,6 +233,20 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - same family on the pool: margin 1.0 2018, trigger 16 2017 / 22 2049
   (held-out 1981), powers 0.6/0.95 + margin -0.5 2005
 
+## v21/v22 — from a constant search on the elite pool
+
+- coordinate search on v20 over 26 constants (pool seeds 3000..3099, one
+  step each way, accept at +25). Accepted: chaser ETA reach factor
+  0.9 -> 1.0 (2080), keeper clearance power 0.8 -> 1.0 (2170), protect
+  touch 0.22 -> 0.15 (2201). Everything else was at or below v20
+- held-out 7000..7099, each change checked on its own:
+  - v21 = keeper clears at full power: 2003 -> 2113 (elite 300, v18
+    403, v17 329, man_marking 552, balanced 529)
+  - v22 = v21 + ETA factor 1.0: 2184 (pool 2170)
+  - v21 + touch 0.15: 2087 (pool 2015) — not taken
+- also on v20 and not taken: keeper plays out with a reach-checked pass
+  (1960-2014), carry along the most open of 7 headings (1908-2014)
+
 ## Next
 - test vs `possession` and `tactical` baselines for robustness
 - timeout counts vary with machine load — environmental, results are

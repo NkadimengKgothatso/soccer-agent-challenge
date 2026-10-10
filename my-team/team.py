@@ -1,4 +1,4 @@
-"""my-team/team.py — v20
+"""my-team/team.py — v21
 
 v6 turned the balanced record from 5-16-19 into 17-17-6 by carrying the
 ball instead of kicking it away and keeping the collector off; v8 and v9
@@ -80,6 +80,10 @@ ball's velocity — until the receiver can reach it; it is kept only if no
 opponent can get a boot on the path before then, and scored by the
 ground it gains plus the margin. Passes go when pressed or when the
 score reaches 10. Pool 2001 -> 2054, held-out 1944 -> 2003.
+
+v21: the keeper's clearance goes at full power instead of 0.8, so it
+clears their press instead of landing on it: held-out 2003 -> 2113,
+elite 282 -> 300, conceded 448 -> 349.
 """
 
 import gc
@@ -106,7 +110,7 @@ _TICKS = (2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 36, 42)
 
 class MyTeam(TeamController):
     name = "my_team"
-    version = "20"
+    version = "21"
 
     def __init__(self):
         self._attack_hold = 0
@@ -538,7 +542,7 @@ class MyTeam(TeamController):
             dx, dy = tx_ - px, ty_ - py
             l = hyp(dx, dy) or 1.0
             aim = (dx / l, dy / l)
-            actions.kick(p.id, aim, 0.8, movement=aim)
+            actions.kick(p.id, aim, 1.0, movement=aim)
 
         # -- one action per player, every tick ---------------------------
         for p in my:
