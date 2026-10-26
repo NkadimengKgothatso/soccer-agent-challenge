@@ -264,3 +264,18 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - timeout counts vary with machine load — environmental, results are
   deterministic; consider trimming per-tick work if the grading machine
   is slower than this one
+
+## v23 — same football, faster (cloud, Linux engine, 2026-10-26)
+
+- within a division the table is ordered on mean decision time, so time
+  is worth places once points are level
+- v22 measured 0.09-0.10 ms per decision (the example team 0.017, an
+  empty act 0.004); a third of it was the ball prediction and the
+  who-reaches-first search
+- v23: closed-form ball roll from a per-match table, squared reach
+  tests, first-to-reach found by walking prediction points outermost.
+  Identical scores to v22 on 680 matches (elite, tactical, possession,
+  balanced, man_marking, v17, v18); 0.077-0.086 ms per decision
+- new 200-match baseline for v22 on seeds 5000..5099 both ends: tactical
+  196-3-1, possession 192-6-2, balanced 180-19-1, man_marking 172-27-1,
+  structured_attack 193-6-1, elite 73-84-43, v18 117-60-23, v17 98-54-48
