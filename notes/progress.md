@@ -279,3 +279,19 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - new 200-match baseline for v22 on seeds 5000..5099 both ends: tactical
   196-3-1, possession 192-6-2, balanced 180-19-1, man_marking 172-27-1,
   structured_attack 193-6-1, elite 73-84-43, v18 117-60-23, v17 98-54-48
+
+## v24 — far-post runner
+
+- pool from now on: elite, v22, v18, v17, man_marking, balanced, tactical
+  (100 seeds both ends = 1400 matches; noise is about +-40 pts)
+- not taken (on v23): shot aimed at the mouth point opponents reach last,
+  9 points (3032 -> 2998) or choosing between the posts that way (3045 on
+  3000s but 3037 -> 2981 held-out); cover man double-presses a held ball
+  in our third (3023)
+- v24: once the ball is past their 30-unit line, the furthest support
+  runner goes to the far post (6 in, 5 off centre). 3000s 3032 -> 3126,
+  7000s 3037 -> 3118, 8000s 3021 -> 3141. elite is flat to slightly down
+  (315 -> 307 on 8000s); the gains are against v22/v18/v17, the closest
+  stand-ins for strong class teams
+- runner variants on 3000s (v24 = 3126): trigger 40 3088, trigger 22
+  3090, 9 in 3154, 4 in 3038, 2.5 off centre 3000 — none clearly better

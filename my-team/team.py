@@ -1,4 +1,4 @@
-"""my-team/team.py — v23
+"""my-team/team.py — v24
 
 v6 turned the balanced record from 5-16-19 into 17-17-6 by carrying the
 ball instead of kicking it away and keeping the collector off; v8 and v9
@@ -95,6 +95,13 @@ first player to reach the ball is found by walking the prediction points
 outermost so the first hit ends the search. Identical scores on 680
 matches against v22; mean decision time about 15-20% lower, which is what
 orders a division.
+
+v24: in the final third (ball past their 30-unit line) the furthest
+support runner attacks the far post, 6 in from the line and 5 off
+centre, instead of holding a lane. Shots close in were mostly blocked;
+a body at the far post takes the rebound and the square ball. Pool of
+elite, v22, v18, v17, man_marking, balanced, tactical (both ends):
+seeds 3000s 3032 -> 3126, held-out 7000s 3037 -> 3118, 8000s 3021 -> 3141.
 """
 
 import gc
@@ -122,7 +129,7 @@ _TABLES = {}
 
 class MyTeam(TeamController):
     name = "my_team"
-    version = "23"
+    version = "24"
 
     def __init__(self):
         self._attack_hold = 0
@@ -370,6 +377,9 @@ class MyTeam(TeamController):
                             best = (score, sy)
                     support_plan[p.id] = (sx, best[1])
                     taken_y.append(best[1])
+                if others and bx > gx_att - 30.0:
+                    # the furthest runner attacks the far post
+                    support_plan[others[-1].id] = (gx_att - 6.0, -5.0 if by > 0.0 else 5.0)
                 # one player sits between the ball and our goal against
                 # the counter — deep enough to meet the break that follows a
                 # blocked shot, not just the one that follows a pass
