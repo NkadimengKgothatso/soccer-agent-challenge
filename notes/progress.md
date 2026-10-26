@@ -295,3 +295,6 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
   stand-ins for strong class teams
 - runner variants on 3000s (v24 = 3126): trigger 40 3088, trigger 22
   3090, 9 in 3154, 4 in 3038, 2.5 off centre 3000 — none clearly better
+- also on v24 (3000s, v24 = 3126), not taken: a second runner at the
+  edge of the box for the cut-back 3043; safety man at bx-10 instead of
+  bx-14 in the final third 3092
