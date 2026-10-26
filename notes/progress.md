@@ -298,3 +298,12 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - also on v24 (3000s, v24 = 3126), not taken: a second runner at the
   edge of the box for the cut-back 3043; safety man at bx-10 instead of
   bx-14 in the final third 3092
+
+## v25 — v24, cheaper
+
+- the ladder (read 2026-10-26 22:40 UTC) had the old 22 October upload
+  at 196th of 267, division 10, 74-115-671, 0.50 ms per decision.
+  Division 1 = top 20, about 2.3-2.8 pts per match, 0.07-0.37 ms
+- v25: field constants cached per match, support-lane loop trimmed
+  (no sqrt/generator per lane, runner's lane not computed). Identical
+  scores to v24 on 500 matches; 0.074 -> 0.066 ms locally

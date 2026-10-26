@@ -1,4 +1,4 @@
-"""my-team/team.py — v24
+"""my-team/team.py — v25
 
 v6 turned the balanced record from 5-16-19 into 17-17-6 by carrying the
 ball instead of kicking it away and keeping the collector off; v8 and v9
@@ -102,6 +102,12 @@ centre, instead of holding a lane. Shots close in were mostly blocked;
 a body at the far post takes the rebound and the square ball. Pool of
 elite, v22, v18, v17, man_marking, balanced, tactical (both ends):
 seeds 3000s 3032 -> 3126, held-out 7000s 3037 -> 3118, 8000s 3021 -> 3141.
+
+v25: v24's decisions, cheaper again: the pitch constants are read once a
+match, the support lanes skip the far-post runner they would overwrite
+and drop their square roots and generator, and the opponents' positions
+are taken as given. Identical scores on 500 matches; about 11% less
+decision time than v24.
 """
 
 import gc
@@ -129,13 +135,15 @@ _TABLES = {}
 
 class MyTeam(TeamController):
     name = "my_team"
-    version = "24"
+    version = "25"
 
     def __init__(self):
         self._attack_hold = 0
+        self._fc = None
 
     def reset(self, seed):
         self._attack_hold = 0
+        self._fc = None
 
     # ---------- kickoff formation ----------
 
@@ -157,20 +165,21 @@ class MyTeam(TeamController):
         bx, by = ball.position
         bvx, bvy = ball.velocity
         my = obs.my_players
-        opp_xy = [(o.position[0], o.position[1]) for o in obs.opponents]
+        opp_xy = [o.position for o in obs.opponents]
         hyp = _HYP
-        dt = 1.0 / getattr(f, "simulation_hz", 20)  # absent on the Linux engine build
-        vmax = f.max_speed
-        gx_def = f.my_goal[0]
-        gx_att = f.opponent_goal[0]
-        half_w = f.width * 0.5 - 1.2
-        half_h = f.height * 0.5 - 1.2
-        mouth = f.goal_width * 0.5
+        fc = self._fc
+        if fc is None:
+            # the pitch and the physics do not change inside a match
+            fc = self._fc = (
+                1.0 / getattr(f, "simulation_hz", 20),  # absent on the Linux engine build
+                f.max_speed, f.my_goal[0], f.opponent_goal[0],
+                f.width * 0.5 - 1.2, f.height * 0.5 - 1.2,
+                f.goal_width * 0.5, f.kick_impulse)
+        dt, vmax, gx_def, gx_att, half_w, half_h, mouth, imp = fc
         n = len(my)
         actions = TeamAction()
         pl = actions.players
         PA = PlayerAction
-        imp = f.kick_impulse
 
         ctrl = ball.controlling_player
         theirs_ctrl = ctrl is not None and ctrl >= n
@@ -357,29 +366,37 @@ class MyTeam(TeamController):
                 others = sorted((p for p in rest if p.id != safety.id),
                                 key=lambda p: p.position[0])
                 taken_y = []
+                runner = others[-1] if others and bx > gx_att - 30.0 else None
+                base_y = by * 0.7
+                base_y = -10.0 if base_y < -10.0 else (10.0 if base_y > 10.0 else base_y)
+                lo_y, hi_y = -half_h + 2.0, half_h - 2.0
                 for i, p in enumerate(others):
+                    if p is runner:
+                        # the furthest runner attacks the far post
+                        support_plan[p.id] = (gx_att - 6.0, -5.0 if by > 0.0 else 5.0)
+                        continue
                     sx = clamp(bx + 9.0 + 10.0 * i, gx_def + 10.0, gx_att - 7.0)
-                    base_y = clamp(by * 0.7, -10.0, 10.0)
-                    best = None
+                    best_s, best_y = -1.0, 0.0
                     for lane in (-14.0, -7.0, 0.0, 7.0, 14.0):
-                        sy = clamp(base_y + lane, -half_h + 2.0, half_h - 2.0)
-                        o2 = 144.0
+                        sy = base_y + lane
+                        sy = lo_y if sy < lo_y else (hi_y if sy > hi_y else sy)
+                        # room to the nearest opponent, worth nothing past 10
+                        o2 = 100.0
                         for (ox, oy) in opp_xy:
                             dx_, dy_ = ox - sx, oy - sy
                             d2 = dx_ * dx_ + dy_ * dy_
                             if d2 < o2:
                                 o2 = d2
-                        open_ = math.sqrt(o2)
-                        near = min((abs(sy - ty_) for ty_ in taken_y),
-                                   default=12.0)
-                        score = min(open_, 10.0) * 1.3 + min(near, 10.0) * 0.8
-                        if best is None or score > best[0]:
-                            best = (score, sy)
-                    support_plan[p.id] = (sx, best[1])
-                    taken_y.append(best[1])
-                if others and bx > gx_att - 30.0:
-                    # the furthest runner attacks the far post
-                    support_plan[others[-1].id] = (gx_att - 6.0, -5.0 if by > 0.0 else 5.0)
+                        near = 10.0
+                        for ty_ in taken_y:
+                            d_ = abs(sy - ty_)
+                            if d_ < near:
+                                near = d_
+                        score = math.sqrt(o2) * 1.3 + near * 0.8
+                        if score > best_s:
+                            best_s, best_y = score, sy
+                    support_plan[p.id] = (sx, best_y)
+                    taken_y.append(best_y)
                 # one player sits between the ball and our goal against
                 # the counter — deep enough to meet the break that follows a
                 # blocked shot, not just the one that follows a pass
