@@ -1,4 +1,4 @@
-"""my-team/team.py — v22
+"""my-team/team.py — v25
 
 v6 turned the balanced record from 5-16-19 into 17-17-6 by carrying the
 ball instead of kicking it away and keeping the collector off; v8 and v9
@@ -88,12 +88,32 @@ elite 282 -> 300, conceded 418 -> 349.
 v22: the chaser's reach is timed at full speed (factor 1.0, was 0.9), so
 the nearest man commits to balls he can really win: held-out 2113 ->
 2184, pool 2170.
+
+v23: the same decisions, cheaper. The ball is rolled forward in closed form
+from a table built once per match, reach is compared squared, and the
+first player to reach the ball is found by walking the prediction points
+outermost so the first hit ends the search. Identical scores on 680
+matches against v22; mean decision time about 15-20% lower, which is what
+orders a division.
+
+v24: in the final third (ball past their 30-unit line) the furthest
+support runner attacks the far post, 6 in from the line and 5 off
+centre, instead of holding a lane. Shots close in were mostly blocked;
+a body at the far post takes the rebound and the square ball. Pool of
+elite, v22, v18, v17, man_marking, balanced, tactical (both ends):
+seeds 3000s 3032 -> 3126, held-out 7000s 3037 -> 3118, 8000s 3021 -> 3141.
+
+v25: v24's decisions, cheaper again: the pitch constants are read once a
+match, the support lanes skip the far-post runner they would overwrite
+and drop their square roots and generator, and the opponents' positions
+are taken as given. Identical scores on 500 matches; about 11% less
+decision time than v24.
 """
 
 import gc
 import math
 
-from soccer import TeamAction, TeamController, clamp
+from soccer import PlayerAction, TeamAction, TeamController, clamp
 
 # One collector pause inside a decision is a 20 ms timeout and a free tick
 # for the other side. Everything this file allocates per tick is acyclic and
@@ -110,17 +130,20 @@ _HYP = math.hypot
 PASS_P1, PASS_P2, PASS_M, PASS_T = 0.55, 0.8, 0.0, 10.0
 
 _TICKS = (2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 36, 42)
+_TABLES = {}
 
 
 class MyTeam(TeamController):
     name = "my_team"
-    version = "22"
+    version = "25"
 
     def __init__(self):
         self._attack_hold = 0
+        self._fc = None
 
     def reset(self, seed):
         self._attack_hold = 0
+        self._fc = None
 
     # ---------- kickoff formation ----------
 
@@ -142,18 +165,21 @@ class MyTeam(TeamController):
         bx, by = ball.position
         bvx, bvy = ball.velocity
         my = obs.my_players
-        opp_xy = [(o.position[0], o.position[1]) for o in obs.opponents]
+        opp_xy = [o.position for o in obs.opponents]
         hyp = _HYP
-        dt = 1.0 / getattr(f, "simulation_hz", 20)  # absent on the Linux engine build
-        vmax = f.max_speed
-        gx_def = f.my_goal[0]
-        gx_att = f.opponent_goal[0]
-        half_w = f.width * 0.5 - 1.2
-        half_h = f.height * 0.5 - 1.2
-        mouth = f.goal_width * 0.5
+        fc = self._fc
+        if fc is None:
+            # the pitch and the physics do not change inside a match
+            fc = self._fc = (
+                1.0 / getattr(f, "simulation_hz", 20),  # absent on the Linux engine build
+                f.max_speed, f.my_goal[0], f.opponent_goal[0],
+                f.width * 0.5 - 1.2, f.height * 0.5 - 1.2,
+                f.goal_width * 0.5, f.kick_impulse)
+        dt, vmax, gx_def, gx_att, half_w, half_h, mouth, imp = fc
         n = len(my)
         actions = TeamAction()
-        imp = f.kick_impulse
+        pl = actions.players
+        PA = PlayerAction
 
         ctrl = ball.controlling_player
         theirs_ctrl = ctrl is not None and ctrl >= n
@@ -162,36 +188,81 @@ class MyTeam(TeamController):
                          and ball.controlling_team != 0)
 
         # -- where the ball is going -------------------------------------
-        if ctrl is None:
-            fr = getattr(f, "ball_friction", 0.985)  # absent on the Linux engine build
-            preds = []
-            x, y, vx, vy = bx, by, bvx, bvy
-            last = 0
+        # Rolled forward in closed form: after t ticks of drag fr the ball
+        # has covered v * dt * (1 - fr^t) / (1 - fr). A held ball travels
+        # with its holder, straight and undragged. Each point carries the
+        # squared reach a player has by then, so the duels below are
+        # settled without a square root
+        held = ctrl is not None
+        key = (getattr(f, "ball_friction", 0.985), dt, vmax, held)  # friction absent on the Linux engine build
+        table = _TABLES.get(key)
+        if table is None:
+            fr = key[0]
+            table = []
             for t in _TICKS:
-                for _ in range(t - last):
-                    x += vx * dt
-                    y += vy * dt
-                    vx *= fr
-                    vy *= fr
-                preds.append((t, clamp(x, -half_w, half_w),
-                                 clamp(y, -half_h, half_h)))
-                last = t
-        else:
-            # a held ball travels with its holder: straight line, no drag
-            preds = [(t, clamp(bx + bvx * t * dt, -half_w, half_w),
-                          clamp(by + bvy * t * dt, -half_h, half_h))
-                     for t in _TICKS]
+                c_ = t * dt if held or fr >= 1.0 else dt * (1.0 - fr ** t) / (1.0 - fr)
+                r_ = vmax * t * dt * 1.0 + 1.5
+                table.append((c_, r_ * r_, t * dt))
+            _TABLES[key] = table
+        reach = []
+        for (c_, r2, s) in table:
+            x_ = bx + bvx * c_
+            y_ = by + bvy * c_
+            if x_ > half_w:
+                x_ = half_w
+            elif x_ < -half_w:
+                x_ = -half_w
+            if y_ > half_h:
+                y_ = half_h
+            elif y_ < -half_h:
+                y_ = -half_h
+            reach.append((x_, y_, r2, s))
 
         def eta(px, py):
             # seconds until this player can first get a boot on the ball
-            for (t, x_, y_) in preds:
-                if hyp(x_ - px, y_ - py) <= vmax * t * dt * 1.0 + 1.5:
-                    return t * dt
+            for (x_, y_, r2, s) in reach:
+                dx_, dy_ = x_ - px, y_ - py
+                if dx_ * dx_ + dy_ * dy_ <= r2:
+                    return s
             return hyp(bx - px, by - py) / vmax + 0.15
 
+        def soonest(cands):
+            # the first of `cands` (x, y, ...) to reach the ball, and when.
+            # Walking the points outermost lets the first hit end the search,
+            # and the slot order inside a point keeps ties with the lower slot
+            best_e, best_i = 1e9, -1
+            for (x_, y_, r2, s) in reach:
+                for i, c in enumerate(cands):
+                    dx_, dy_ = x_ - c[0], y_ - c[1]
+                    if dx_ * dx_ + dy_ * dy_ <= r2:
+                        best_e, best_i = s, i
+                        break
+                if best_i >= 0:
+                    break
+            if best_i < 0:
+                # nobody reaches a point: everyone is timed straight to it
+                for i, c in enumerate(cands):
+                    e = hyp(bx - c[0], by - c[1]) / vmax + 0.15
+                    if e < best_e:
+                        best_e, best_i = e, i
+            else:
+                # one who never reaches a point is timed straight to the
+                # ball; only someone already that close could beat the hit
+                lim = (best_e - 0.15) * vmax
+                if lim > 0.0:
+                    lim *= lim
+                    for i, c in enumerate(cands):
+                        dx_, dy_ = bx - c[0], by - c[1]
+                        if i != best_i and dx_ * dx_ + dy_ * dy_ < lim:
+                            e = eta(c[0], c[1])
+                            if e < best_e or (e == best_e and i < best_i):
+                                best_e, best_i = e, i
+            return best_e, (cands[best_i] if best_i >= 0 else None)
+
         def meet(px, py):
-            for (t, x_, y_) in preds:
-                if hyp(x_ - px, y_ - py) <= vmax * t * dt * 1.0 + 1.5:
+            for (x_, y_, r2, s) in reach:
+                dx_, dy_ = x_ - px, y_ - py
+                if dx_ * dx_ + dy_ * dy_ <= r2:
                     return (x_, y_)
             return (bx, by)
 
@@ -240,8 +311,11 @@ class MyTeam(TeamController):
                 return (0.0, 0.0)
             ux, uy = dx / l, dy / l
             if avoid > 0.0:
+                a2 = avoid * avoid
                 for (ox, oy) in opp_xy:
                     rx, ry = px - ox, py - oy
+                    if rx * rx + ry * ry >= a2:
+                        continue
                     d_ = hyp(rx, ry)
                     if 0.3 < d_ < avoid:
                         w = (avoid - d_) / avoid * 0.8
@@ -254,19 +328,10 @@ class MyTeam(TeamController):
             return (ux * th, uy * th)
 
         # -- who chases, who holds ---------------------------------------
-        chaser = None
-        chaser_eta = 1e9
-        for p in my:
-            if p.id == 0:
-                continue
-            e = eta(p.position[0], p.position[1])
-            if e < chaser_eta:
-                chaser, chaser_eta = p, e
-        their_eta = 1e9
-        for (ox, oy) in opp_xy:
-            e = eta(ox, oy)
-            if e < their_eta:
-                their_eta = e
+        chaser_eta, c_ = soonest([(p.position[0], p.position[1], p)
+                                  for p in my if p.id != 0])
+        chaser = c_[2] if c_ is not None else None
+        their_eta = soonest(opp_xy)[0]
 
         # our own reading of the phase, with a little dwell so contested
         # balls don't flicker roles every tick
@@ -301,24 +366,37 @@ class MyTeam(TeamController):
                 others = sorted((p for p in rest if p.id != safety.id),
                                 key=lambda p: p.position[0])
                 taken_y = []
+                runner = others[-1] if others and bx > gx_att - 30.0 else None
+                base_y = by * 0.7
+                base_y = -10.0 if base_y < -10.0 else (10.0 if base_y > 10.0 else base_y)
+                lo_y, hi_y = -half_h + 2.0, half_h - 2.0
                 for i, p in enumerate(others):
+                    if p is runner:
+                        # the furthest runner attacks the far post
+                        support_plan[p.id] = (gx_att - 6.0, -5.0 if by > 0.0 else 5.0)
+                        continue
                     sx = clamp(bx + 9.0 + 10.0 * i, gx_def + 10.0, gx_att - 7.0)
-                    base_y = clamp(by * 0.7, -10.0, 10.0)
-                    best = None
+                    best_s, best_y = -1.0, 0.0
                     for lane in (-14.0, -7.0, 0.0, 7.0, 14.0):
-                        sy = clamp(base_y + lane, -half_h + 2.0, half_h - 2.0)
-                        open_ = 12.0
+                        sy = base_y + lane
+                        sy = lo_y if sy < lo_y else (hi_y if sy > hi_y else sy)
+                        # room to the nearest opponent, worth nothing past 10
+                        o2 = 100.0
                         for (ox, oy) in opp_xy:
-                            d_ = hyp(ox - sx, oy - sy)
-                            if d_ < open_:
-                                open_ = d_
-                        near = min((abs(sy - ty_) for ty_ in taken_y),
-                                   default=12.0)
-                        score = min(open_, 10.0) * 1.3 + min(near, 10.0) * 0.8
-                        if best is None or score > best[0]:
-                            best = (score, sy)
-                    support_plan[p.id] = (sx, best[1])
-                    taken_y.append(best[1])
+                            dx_, dy_ = ox - sx, oy - sy
+                            d2 = dx_ * dx_ + dy_ * dy_
+                            if d2 < o2:
+                                o2 = d2
+                        near = 10.0
+                        for ty_ in taken_y:
+                            d_ = abs(sy - ty_)
+                            if d_ < near:
+                                near = d_
+                        score = math.sqrt(o2) * 1.3 + near * 0.8
+                        if score > best_s:
+                            best_s, best_y = score, sy
+                    support_plan[p.id] = (sx, best_y)
+                    taken_y.append(best_y)
                 # one player sits between the ball and our goal against
                 # the counter — deep enough to meet the break that follows a
                 # blocked shot, not just the one that follows a pass
@@ -559,7 +637,7 @@ class MyTeam(TeamController):
                         keeper_clear(p)
                     else:
                         tx, ty = meet(kx, ky)
-                        actions.move(pid, run_dir(px, py, tx, ty, 0.0, 1.0))
+                        pl[pid] = PA(run_dir(px, py, tx, ty, 0.0, 1.0))
                 else:
                     # stand on the bisector of the angle the ball makes
                     # with the two posts, and cover where the ball would
@@ -582,7 +660,7 @@ class MyTeam(TeamController):
                         if 0.0 < tc < 2.0:
                             ty = by + bvy * tc
                     ty = clamp(ty, -mouth + 1.0, mouth - 1.0)
-                    actions.move(pid, run_dir(px, py, tx, ty, 0.0, 1.5))
+                    pl[pid] = PA(run_dir(px, py, tx, ty, 0.0, 1.5))
                 continue
 
             if their_restart:
@@ -595,9 +673,9 @@ class MyTeam(TeamController):
                         tx, ty = need, 0.0
                     else:
                         tx, ty = px / d0 * need, py / d0 * need
-                    actions.move(pid, run_dir(px, py, tx, ty, 0.0, 2.0))
+                    pl[pid] = PA(run_dir(px, py, tx, ty, 0.0, 2.0))
                 else:
-                    actions.move(pid, (0.0, 0.0))
+                    pl[pid] = PA((0.0, 0.0))
                 continue
 
             if eff_chaser is not None and pid == eff_chaser.id:
@@ -611,7 +689,7 @@ class MyTeam(TeamController):
                         lg = hyp(dxg, dyg) or 1.0
                         tx += dxg / lg * 1.5
                         ty += dyg / lg * 1.5
-                    actions.move(pid, run_dir(px, py, tx, ty, 0.0, 1.0))
+                    pl[pid] = PA(run_dir(px, py, tx, ty, 0.0, 1.0))
                 continue
 
             if attack_mode:
@@ -619,14 +697,14 @@ class MyTeam(TeamController):
                 if spot is None:
                     spot = (clamp(bx - 8.0, gx_def + 8.0, gx_att - 20.0),
                             clamp(by * 0.6, -10.0, 10.0))
-                actions.move(pid, run_dir(px, py, spot[0], spot[1], 3.0, 2.5))
+                pl[pid] = PA(run_dir(px, py, spot[0], spot[1], 3.0, 2.5))
             elif pid == cover_id:
-                actions.move(pid, run_dir(px, py, cx8, cy8, 2.0, 2.0))
+                pl[pid] = PA(run_dir(px, py, cx8, cy8, 2.0, 2.0))
             else:
                 spot = mark_map.get(pid)
                 if spot is None:
                     spot = (clamp(bx - 10.0, gx_def + 6.0, 0.0),
                             clamp(by * 0.5, -8.0, 8.0))
-                actions.move(pid, run_dir(px, py, spot[0], spot[1], 1.5, 2.0))
+                pl[pid] = PA(run_dir(px, py, spot[0], spot[1], 1.5, 2.0))
 
         return actions

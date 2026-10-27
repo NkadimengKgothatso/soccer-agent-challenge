@@ -1,0 +1,721 @@
+"""my-team/team.py — v26
+
+v6 turned the balanced record from 5-16-19 into 17-17-6 by carrying the
+ball instead of kicking it away and keeping the collector off; v8 and v9
+kept that and loosened the shot gate — range out to 28, point-blank lanes
+accepted with almost no room — which took the tuning seeds to 23-14-3.
+Across five unseen seed ranges the extra goals were paid back in extra
+concessions, from two leaks v10 closes while keeping the shooting:
+
+*   the safety drops to bx - 14: deep enough to meet the break that follows
+    a blocked shot, not just the one that follows a pass;
+*   a lane or a landing spot is never discounted for desperation — the
+    press feeds on exactly those balls, wherever they are played from;
+*   the hoof out of our end only fires when no decent pass is on: a
+    score-6 option beats a blind clearance.
+
+v11 ran the 5-a-side formation book against the 200-match grid (the
+3-1 defensive block was left out on principle): the 1-2-1 diamond kept
+it tight but drew too much (78-110-12, 344 pts), the old 2-2 sat
+mid-table (94-89-17, 371 pts), and the 1-3 high line won it — 95-91-14,
+goals 130-24, +0.530, 376 pts. So v11 is the 1-3: one anchor back,
+three outfielders pressed to halfway, so our kickoffs are taken a second
+sooner and theirs is counterpressed at the line instead of at our box.
+The packed-box stall on the hard seeds went with it (4000s: 11-21-8 to
+17-21-2). Open-play roles are unchanged: they are ball-relative, not
+slot-relative.
+
+v12 added the one-on-one rule: a carrier past every outfield opponent,
+with only their keeper ahead near his line, shoots the far post
+immediately — he cannot cover both, and carrying on only lets him set
+and the chasers recover. It halved the losses (14 -> 7 in 200) and took
+the grid to 100W-93D-7L, 149-23. v13 pushes the measured shot out to
+31 — 34 was tried and was a wash (397 vs 399 points), so 31 it is —
+for a final 104W-87D-9L, 160-25, +0.675.
+
+The rest — collector-off latency, dribble-first carrier, ETA chaser,
+goal-side pressing and marking, crossing-point keeper, restart margins —
+is v6 unchanged.
+
+v14 fixes where the shots go. A kick adds its impulse to the ball's own
+velocity, so a ball rolling across the striker (a pass arriving, a touch
+running wide) went where the sum pointed, not at the post: about half of
+v13's "shots" were sailing wide. Shots now point the boot so the sum lands
+on the target. Over seeds 3000-3299 both ends: 3818 -> 4194 points; on
+the held-out 7000-7299: 3812 -> 4169. Compensating passes and touches the
+same way was tried and lost points — their power sizing already assumes
+the ball's own speed — so only the shots use it.
+
+v15: with shots now going where they are aimed, the range was the limit.
+31 -> 36 -> 40 -> 45 -> 55 climbed 4194 -> 4440 -> 4560 -> 4595 -> 4926
+points; the lane test still has to pass, so a long shot is only taken
+through an open lane. 55 includes the kickoff, which tactical's keeper
+cannot hold (tactical 307-193-100 -> 578-21-1); balanced 1401 -> 1445,
+and it helps against man_marking, structured_attack and ball_chaser too.
+Held-out 7000s: 4169 -> 4954.
+
+v16: the lane a shot needs drops from 0.8-1.5 to 0.3 — an accurate,
+full-pace shot through a tight gap still beats the body beside it more
+often than the carry that waits for a better one. Sweep: 1.5 (v15) 4926,
+1.2 5035, 0.6 5073, 0.3 5094, 0.0 5096 over balanced, possession and
+tactical; 0.3 keeps a sanity margin. Held-out 7000s vs balanced,
+man_marking, structured_attack: 4456 -> 4786.
+
+v17: every shot at full power. Measured against teams with a keeper that
+tracks the crossing point — v16 itself and the old v13, the closest
+stand-ins for the class — a softer, placed shot is a save: 1825 -> 1976
+over seeds 3000-3299; held-out 7000s (v16, v13, balanced, tactical)
+5255 -> 5379, with v13 going 281-222-97 -> 324-209-67.
+
+v19: the keeper stands on the bisector of the angle the ball makes with
+the two posts, instead of at 0.55 of the ball's y. Against the engine's
+`elite` side, the v18 dribbler and v17 itself (seeds 3000-3099 and
+held-out 7000-7099, both ends) it concedes about a fifth fewer goals:
+531 -> 435 conceded over 1000 held-out matches, 1896 -> 1944 pts.
+
+v20: a pass is chosen by who gets to the ball first. Each candidate (a
+mate where he is or a second ahead of his run, at power 0.55 or 0.8) is
+rolled forward with the real kick physics — the impulse adds to the
+ball's velocity — until the receiver can reach it; it is kept only if no
+opponent can get a boot on the path before then, and scored by the
+ground it gains plus the margin. Passes go when pressed or when the
+score reaches 10. Pool 2001 -> 2054, held-out 1944 -> 2003.
+
+v21: the keeper's clearance goes at full power instead of 0.8, so it
+clears their press instead of landing on it: held-out 2003 -> 2113,
+elite 282 -> 300, conceded 418 -> 349.
+
+v22: the chaser's reach is timed at full speed (factor 1.0, was 0.9), so
+the nearest man commits to balls he can really win: held-out 2113 ->
+2184, pool 2170.
+
+v23: the same decisions, cheaper. The ball is rolled forward in closed form
+from a table built once per match, reach is compared squared, and the
+first player to reach the ball is found by walking the prediction points
+outermost so the first hit ends the search. Identical scores on 680
+matches against v22; mean decision time about 15-20% lower, which is what
+orders a division.
+
+v24: in the final third (ball past their 30-unit line) the furthest
+support runner attacks the far post, 6 in from the line and 5 off
+centre, instead of holding a lane. Shots close in were mostly blocked;
+a body at the far post takes the rebound and the square ball. Pool of
+elite, v22, v18, v17, man_marking, balanced, tactical (both ends):
+seeds 3000s 3032 -> 3126, held-out 7000s 3037 -> 3118, 8000s 3021 -> 3141.
+
+v25: v24's decisions, cheaper again: the pitch constants are read once a
+match, the support lanes skip the far-post runner they would overwrite
+and drop their square roots and generator, and the opponents' positions
+are taken as given. Identical scores on 500 matches; about 11% less
+decision time than v24.
+
+v26: played like the class, not like the baselines. The ladder showed the
+top teams completing 35-40 passes a match, shooting 4-6 times from 10-25
+out, and v25 giving the ball away with almost every full-power kick
+(long shots and keeper clearances). So: shots only from inside 30 (the
+one-on-one rule stays), a pass goes at score 6 instead of 10, a third
+pass power at full strength with range 60, and the keeper plays the
+reach-checked pass when one is on, clearing only when none is.
+"""
+
+import gc
+import math
+
+from soccer import PlayerAction, TeamAction, TeamController, clamp
+
+# One collector pause inside a decision is a 20 ms timeout and a free tick
+# for the other side. Everything this file allocates per tick is acyclic and
+# freed by refcounting, so the collector can stay off for a whole match.
+gc.disable()
+
+_HYP = math.hypot
+
+# Ball prediction horizons, in ticks: fine through the first half-second
+# (where most duels are settled), coarser out to the two seconds a pass
+# spends rolling. Twelve points keep the ETA pass over both teams cheap.
+# pass powers tried, the reach margin a pass needs, and the score at which
+# an unpressed carrier passes rather than carries
+PASS_P1, PASS_P2, PASS_M, PASS_T = 0.55, 0.8, 0.0, 6.0
+
+_TICKS = (2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 36, 42)
+_TABLES = {}
+
+
+class MyTeam(TeamController):
+    name = "my_team"
+    version = "26"
+
+    def __init__(self):
+        self._attack_hold = 0
+        self._fc = None
+
+    def reset(self, seed):
+        self._attack_hold = 0
+        self._fc = None
+
+    # ---------- kickoff formation ----------
+
+    def initial_formation(self, field):
+        gx = field.my_goal[0]
+        return [
+            (gx + 2.0, 0.0),      # 0: keeper, on the line
+            (gx + 20.0, 0.0),     # 1: anchor back, the one deep body
+            (gx + 38.0, -14.0),   # 2: high line, left
+            (gx + 39.0, 0.0),     # 3: high line, on the spot's doorstep
+            (gx + 38.0, 14.0),    # 4: high line, right
+        ]
+
+    # ---------- main loop ----------
+
+    def act(self, obs):
+        f = obs.field
+        ball = obs.ball
+        bx, by = ball.position
+        bvx, bvy = ball.velocity
+        my = obs.my_players
+        opp_xy = [o.position for o in obs.opponents]
+        hyp = _HYP
+        fc = self._fc
+        if fc is None:
+            # the pitch and the physics do not change inside a match
+            fc = self._fc = (
+                1.0 / getattr(f, "simulation_hz", 20),  # absent on the Linux engine build
+                f.max_speed, f.my_goal[0], f.opponent_goal[0],
+                f.width * 0.5 - 1.2, f.height * 0.5 - 1.2,
+                f.goal_width * 0.5, f.kick_impulse)
+        dt, vmax, gx_def, gx_att, half_w, half_h, mouth, imp = fc
+        n = len(my)
+        actions = TeamAction()
+        pl = actions.players
+        PA = PlayerAction
+
+        ctrl = ball.controlling_player
+        theirs_ctrl = ctrl is not None and ctrl >= n
+        their_restart = (bx * bx + by * by < 1.0
+                         and hyp(bvx, bvy) < 0.5
+                         and ball.controlling_team != 0)
+
+        # -- where the ball is going -------------------------------------
+        # Rolled forward in closed form: after t ticks of drag fr the ball
+        # has covered v * dt * (1 - fr^t) / (1 - fr). A held ball travels
+        # with its holder, straight and undragged. Each point carries the
+        # squared reach a player has by then, so the duels below are
+        # settled without a square root
+        held = ctrl is not None
+        key = (getattr(f, "ball_friction", 0.985), dt, vmax, held)  # friction absent on the Linux engine build
+        table = _TABLES.get(key)
+        if table is None:
+            fr = key[0]
+            table = []
+            for t in _TICKS:
+                c_ = t * dt if held or fr >= 1.0 else dt * (1.0 - fr ** t) / (1.0 - fr)
+                r_ = vmax * t * dt * 1.0 + 1.5
+                table.append((c_, r_ * r_, t * dt))
+            _TABLES[key] = table
+        reach = []
+        for (c_, r2, s) in table:
+            x_ = bx + bvx * c_
+            y_ = by + bvy * c_
+            if x_ > half_w:
+                x_ = half_w
+            elif x_ < -half_w:
+                x_ = -half_w
+            if y_ > half_h:
+                y_ = half_h
+            elif y_ < -half_h:
+                y_ = -half_h
+            reach.append((x_, y_, r2, s))
+
+        def eta(px, py):
+            # seconds until this player can first get a boot on the ball
+            for (x_, y_, r2, s) in reach:
+                dx_, dy_ = x_ - px, y_ - py
+                if dx_ * dx_ + dy_ * dy_ <= r2:
+                    return s
+            return hyp(bx - px, by - py) / vmax + 0.15
+
+        def soonest(cands):
+            # the first of `cands` (x, y, ...) to reach the ball, and when.
+            # Walking the points outermost lets the first hit end the search,
+            # and the slot order inside a point keeps ties with the lower slot
+            best_e, best_i = 1e9, -1
+            for (x_, y_, r2, s) in reach:
+                for i, c in enumerate(cands):
+                    dx_, dy_ = x_ - c[0], y_ - c[1]
+                    if dx_ * dx_ + dy_ * dy_ <= r2:
+                        best_e, best_i = s, i
+                        break
+                if best_i >= 0:
+                    break
+            if best_i < 0:
+                # nobody reaches a point: everyone is timed straight to it
+                for i, c in enumerate(cands):
+                    e = hyp(bx - c[0], by - c[1]) / vmax + 0.15
+                    if e < best_e:
+                        best_e, best_i = e, i
+            else:
+                # one who never reaches a point is timed straight to the
+                # ball; only someone already that close could beat the hit
+                lim = (best_e - 0.15) * vmax
+                if lim > 0.0:
+                    lim *= lim
+                    for i, c in enumerate(cands):
+                        dx_, dy_ = bx - c[0], by - c[1]
+                        if i != best_i and dx_ * dx_ + dy_ * dy_ < lim:
+                            e = eta(c[0], c[1])
+                            if e < best_e or (e == best_e and i < best_i):
+                                best_e, best_i = e, i
+            return best_e, (cands[best_i] if best_i >= 0 else None)
+
+        def meet(px, py):
+            for (x_, y_, r2, s) in reach:
+                dx_, dy_ = x_ - px, y_ - py
+                if dx_ * dx_ + dy_ * dy_ <= r2:
+                    return (x_, y_)
+            return (bx, by)
+
+        def lane_room(ax, ay, tx, ty):
+            # smallest distance from any opponent to the segment ax-ay -> tx-ty
+            room = 15.0
+            dx, dy = tx - ax, ty - ay
+            l2 = dx * dx + dy * dy
+            if l2 < 1e-9:
+                return 0.0
+            for (ox, oy) in opp_xy:
+                t = ((ox - ax) * dx + (oy - ay) * dy) / l2
+                if t < 0.0:
+                    t = 0.0
+                elif t > 1.0:
+                    t = 1.0
+                d_ = hyp(ox - (ax + dx * t), oy - (ay + dy * t))
+                if d_ < room:
+                    room = d_
+            return room
+
+        def strike(pid, aim, power, movement):
+            # a kick adds its impulse to the ball's own velocity, so a ball
+            # already rolling across the striker goes where the sum points,
+            # not where the boot does. Point the boot so the sum lands on aim
+            ux, uy = aim
+            k = imp * power
+            uv = bvx * ux + bvy * uy
+            disc = uv * uv - (bvx * bvx + bvy * bvy) + k * k
+            if disc >= 0.0:
+                s = uv + math.sqrt(disc)
+                dx, dy = s * ux - bvx, s * uy - bvy
+            else:
+                dx, dy = ux * k - bvx, uy * k - bvy
+            l = hyp(dx, dy)
+            if l > 1e-6:
+                aim = (dx / l, dy / l)
+            actions.kick(pid, aim, power, movement=movement)
+
+        def run_dir(px, py, tx, ty, avoid, ease):
+            # unit direction to the target, bent away from close opponents,
+            # throttled down inside `ease` so positioning doesn't oscillate
+            dx, dy = tx - px, ty - py
+            l = hyp(dx, dy)
+            if l < 1e-6:
+                return (0.0, 0.0)
+            ux, uy = dx / l, dy / l
+            if avoid > 0.0:
+                a2 = avoid * avoid
+                for (ox, oy) in opp_xy:
+                    rx, ry = px - ox, py - oy
+                    if rx * rx + ry * ry >= a2:
+                        continue
+                    d_ = hyp(rx, ry)
+                    if 0.3 < d_ < avoid:
+                        w = (avoid - d_) / avoid * 0.8
+                        ux += rx / d_ * w
+                        uy += ry / d_ * w
+                l2 = hyp(ux, uy)
+                if l2 > 1e-6:
+                    ux, uy = ux / l2, uy / l2
+            th = 1.0 if l >= ease else l / ease
+            return (ux * th, uy * th)
+
+        # -- who chases, who holds ---------------------------------------
+        chaser_eta, c_ = soonest([(p.position[0], p.position[1], p)
+                                  for p in my if p.id != 0])
+        chaser = c_[2] if c_ is not None else None
+        their_eta = soonest(opp_xy)[0]
+
+        # our own reading of the phase, with a little dwell so contested
+        # balls don't flicker roles every tick
+        raw_attack = (ball.controlling_team == 0
+                      or (ctrl is None and chaser_eta < their_eta + 0.05))
+        hold = self._attack_hold + (1 if raw_attack else -1)
+        self._attack_hold = -3 if hold < -3 else (3 if hold > 3 else hold)
+        attack_mode = ball.controlling_team == 0 or self._attack_hold > 0
+
+        # the keeper claims anything loose or theirs inside our box area,
+        # otherwise the outfield chaser owns the ball
+        keeper = my[0]
+        kx, ky = keeper.position
+        k_eta = eta(kx, ky)
+        keeper_rush = (bx < gx_def + 12.0 and not their_restart
+                       and (theirs_ctrl
+                            or (ctrl is None and k_eta < chaser_eta + 0.1)))
+        eff_chaser = None if keeper_rush else chaser
+
+        rest = [p for p in my
+                if p.id != 0 and (eff_chaser is None or p.id != eff_chaser.id)]
+
+        # -- off-ball role tables ----------------------------------------
+        support_plan = {}
+        mark_map = {}
+        cover_id = None
+        cx8 = cy8 = 0.0
+
+        if attack_mode:
+            if rest:
+                safety = min(rest, key=lambda p: p.position[0])
+                others = sorted((p for p in rest if p.id != safety.id),
+                                key=lambda p: p.position[0])
+                taken_y = []
+                runner = others[-1] if others and bx > gx_att - 30.0 else None
+                base_y = by * 0.7
+                base_y = -10.0 if base_y < -10.0 else (10.0 if base_y > 10.0 else base_y)
+                lo_y, hi_y = -half_h + 2.0, half_h - 2.0
+                for i, p in enumerate(others):
+                    if p is runner:
+                        # the furthest runner attacks the far post
+                        support_plan[p.id] = (gx_att - 6.0, -5.0 if by > 0.0 else 5.0)
+                        continue
+                    sx = clamp(bx + 9.0 + 10.0 * i, gx_def + 10.0, gx_att - 7.0)
+                    best_s, best_y = -1.0, 0.0
+                    for lane in (-14.0, -7.0, 0.0, 7.0, 14.0):
+                        sy = base_y + lane
+                        sy = lo_y if sy < lo_y else (hi_y if sy > hi_y else sy)
+                        # room to the nearest opponent, worth nothing past 10
+                        o2 = 100.0
+                        for (ox, oy) in opp_xy:
+                            dx_, dy_ = ox - sx, oy - sy
+                            d2 = dx_ * dx_ + dy_ * dy_
+                            if d2 < o2:
+                                o2 = d2
+                        near = 10.0
+                        for ty_ in taken_y:
+                            d_ = abs(sy - ty_)
+                            if d_ < near:
+                                near = d_
+                        score = math.sqrt(o2) * 1.3 + near * 0.8
+                        if score > best_s:
+                            best_s, best_y = score, sy
+                    support_plan[p.id] = (sx, best_y)
+                    taken_y.append(best_y)
+                # one player sits between the ball and our goal against
+                # the counter — deep enough to meet the break that follows a
+                # blocked shot, not just the one that follows a pass
+                support_plan[safety.id] = (
+                    clamp(bx - 14.0, gx_def + 6.0, gx_att - 25.0),
+                    clamp(by * 0.5, -8.0, 8.0),
+                )
+        else:
+            if rest:
+                dxg, dyg = gx_def - bx, -by
+                lg = hyp(dxg, dyg) or 1.0
+                cx8 = clamp(bx + dxg / lg * 8.0, gx_def + 2.5, half_w)
+                cy8 = by + dyg / lg * 8.0
+                cover_id = min(
+                    rest, key=lambda p: hyp(p.position[0] - cx8,
+                                            p.position[1] - cy8)).id
+                markers = [p for p in rest if p.id != cover_id]
+                threats = sorted(opp_xy,
+                                 key=lambda o: (gx_def - o[0]) ** 2 + o[1] ** 2)
+                for opp in threats:
+                    if not markers:
+                        break
+                    mk = min(markers, key=lambda p: hyp(p.position[0] - opp[0],
+                                                        p.position[1] - opp[1]))
+                    markers.remove(mk)
+                    # goalside of the marked man, inside the pitch, and no
+                    # deeper than the ball line
+                    ox_, oy_ = opp
+                    dxg, dyg = gx_def - ox_, -oy_
+                    lg = hyp(dxg, dyg) or 1.0
+                    tx_ = clamp(ox_ + dxg / lg * 2.6,
+                                gx_def + 3.0, min(bx + 14.0, 38.0))
+                    mark_map[mk.id] = (tx_, clamp(oy_ + dyg / lg * 2.6,
+                                                  -half_h + 1.5, half_h - 1.5))
+                for p in markers:
+                    side = -8.0 if p.id % 2 else 8.0
+                    mark_map[p.id] = (clamp(bx - 8.0, gx_def + 6.0, 0.0), side)
+
+        # -- the man on the ball -----------------------------------------
+
+        def on_ball(p, keeper=False):
+            pid = p.id
+            px, py = p.position
+
+            # 1. the shot: only with measured room to a post
+            d_goal = hyp(gx_att - px, -py)
+
+            # 1a. one-on-one: past every outfield opponent, only their
+            #     keeper ahead and near his line. He cannot cover both
+            #     posts, so the far one is the shot — taken now, while
+            #     he is still shaded to the near side and the chasers
+            #     are still behind, not after a carry into him
+            if d_goal < 26.0:
+                ahead = [(ox, oy) for (ox, oy) in opp_xy if ox > px - 0.5]
+                if ahead and all(ox > gx_att - 9.0 for (ox, oy) in ahead):
+                    koy = max(ahead, key=lambda o: o[0])[1]
+                    ty_ = -(mouth - 1.5) if koy > 0.0 else (mouth - 1.5)
+                    dx, dy = gx_att - px, ty_ - py
+                    l = hyp(dx, dy) or 1.0
+                    aim = (dx / l, dy / l)
+                    power = 1.0
+                    strike(pid, aim, power, aim)
+                    return
+
+            if d_goal < 30.0:
+                post = mouth - 1.2
+                best_room, best_ty = -1.0, 0.0
+                for ty_ in (post, -post):
+                    room = lane_room(px, py, gx_att, ty_)
+                    if room > best_room:
+                        best_room, best_ty = room, ty_
+                need = 0.3
+                if best_room >= need:
+                    dx, dy = gx_att - px, best_ty - py
+                    l = hyp(dx, dy) or 1.0
+                    aim = (dx / l, dy / l)
+                    power = 1.0
+                    strike(pid, aim, power, aim)
+                    return
+
+            # 2. how much room there is to carry into
+            gdx, gdy = gx_att - px, -py
+            gl = hyp(gdx, gdy) or 1.0
+            gdx, gdy = gdx / gl, gdy / gl
+            space = 14.0
+            for (ox, oy) in opp_xy:
+                rx, ry = ox - px, oy - py
+                d_ = hyp(rx, ry)
+                if 0.3 < d_ < space and (rx * gdx + ry * gdy) / d_ > 0.45:
+                    space = d_
+            press = 15.0
+            for (ox, oy) in opp_xy:
+                d_ = hyp(ox - px, oy - py)
+                if d_ < press:
+                    press = d_
+
+            # 3. the pass table: led by the receiver's own velocity. a
+            #    pressed man may pass backwards, but never through a lane
+            #    he wouldn't accept in open play — those are the passes the
+            #    press feeds on
+            desperate = px < gx_def + 22.0 and press < 3.5
+            max_opp_x = -100.0
+            for (ox, oy) in opp_xy:
+                if gx_att - 6.0 > ox > max_opp_x:
+                    max_opp_x = ox
+            best = None
+            fr = getattr(f, "ball_friction", 0.985)
+            mates = [m for m in my if m.id != pid]
+            for mate in mates:
+                mx, my_ = mate.position
+                mvx, mvy = mate.velocity
+                for lead in (0.0, 1.0):
+                    lx = clamp(mx + mvx * lead, -half_w, half_w)
+                    ly = clamp(my_ + mvy * lead, -half_h, half_h)
+                    d_ = hyp(lx - px, ly - py)
+                    if d_ < 6.0 or d_ > 60.0:
+                        continue
+                    ux, uy = (lx - px) / d_, (ly - py) / d_
+                    for power in (PASS_P1, PASS_P2, 1.0):
+                        # where the ball really goes: the kick adds to the
+                        # ball's own velocity, capped at 30
+                        vx_ = bvx + ux * imp * power
+                        vy_ = bvy + uy * imp * power
+                        sp = hyp(vx_, vy_)
+                        if sp > 30.0:
+                            vx_, vy_ = vx_ * 30.0 / sp, vy_ * 30.0 / sp
+                        x_, y_ = bx, by
+                        margin = 99.0
+                        recv = None
+                        for k in range(1, 61):
+                            x_ += vx_ * dt
+                            y_ += vy_ * dt
+                            vx_ *= fr
+                            vy_ *= fr
+                            if not (-half_w < x_ < half_w and -half_h < y_ < half_h):
+                                break
+                            if k % 2:
+                                continue
+                            t = k * dt
+                            run = vmax * t
+                            if hyp(mx - x_, my_ - y_) <= 1.6 + run * 0.9:
+                                recv = (x_, y_)
+                                break
+                            for (ox, oy) in opp_xy:
+                                g = hyp(ox - x_, oy - y_) - 2.2 - run
+                                if g < margin:
+                                    margin = g
+                            if margin < PASS_M:
+                                break
+                        if recv is None or margin < PASS_M:
+                            continue
+                        rx, ry = recv
+                        gain = rx - px
+                        score = gain + min(margin, 4.0) * 1.5
+                        if rx > max_opp_x + 1.0 and gain > 8.0:
+                            score += 6.0      # releases a runner behind their line
+                        if gain < 0.0 and not desperate:
+                            score -= 6.0
+                        if best is None or score > best[0]:
+                            best = (score, ux, uy, power)
+
+            def take_pass():
+                _, ux, uy, power = best
+                actions.kick(pid, (ux, uy), power, movement=(ux, uy))
+
+            if best is not None and (keeper or space < 4.5 or best[0] >= PASS_T):
+                take_pass()
+                return
+            if keeper:
+                keeper_clear(p)
+                return
+
+            # 4. the carry: a touch sized to the room ahead, bent around
+            #    the nearest bodies, taken at full stride
+            if space >= 4.5:
+                ax_, ay_ = gdx, gdy
+                for (ox, oy) in opp_xy:
+                    rx, ry = px - ox, py - oy
+                    d_ = hyp(rx, ry)
+                    if 0.4 < d_ < 6.5:
+                        w = (6.5 - d_) / 6.5 * 0.9
+                        ax_ += rx / d_ * w
+                        ay_ += ry / d_ * w
+                l = hyp(ax_, ay_) or 1.0
+                ux, uy = ax_ / l, ay_ / l
+                power = clamp(0.08 + space * 0.027, 0.18, 0.42)
+                actions.kick(pid, (ux, uy), power, movement=(ux, uy))
+                return
+
+            # 5. nothing on: deep and pressed, put it up the better wing
+            if px < gx_def + 18.0 and press < 3.5 \
+                    and (best is None or best[0] < 6.0):
+                hoof = None
+                for ty_ in (half_h - 6.0, -(half_h - 6.0)):
+                    tx_ = clamp(px + 45.0, -half_w, half_w)
+                    room = lane_room(px, py, tx_, ty_)
+                    if hoof is None or room > hoof[0]:
+                        hoof = (room, tx_, ty_)
+                _, tx_, ty_ = hoof
+                dx, dy = tx_ - px, ty_ - py
+                l = hyp(dx, dy) or 1.0
+                aim = (dx / l, dy / l)
+                actions.kick(pid, aim, 0.85, movement=aim)
+                return
+
+            # 6. protect it: a soft touch away from the nearest body
+            ax_, ay_ = gdx, gdy
+            for (ox, oy) in opp_xy:
+                rx, ry = px - ox, py - oy
+                d_ = hyp(rx, ry)
+                if 0.4 < d_ < 6.5:
+                    w = (6.5 - d_) / 6.5 * 0.9
+                    ax_ += rx / d_ * w
+                    ay_ += ry / d_ * w
+            l = hyp(ax_, ay_) or 1.0
+            ux, uy = ax_ / l, ay_ / l
+            actions.kick(pid, (ux, uy), 0.22, movement=(ux, uy))
+
+        def keeper_clear(p):
+            px, py = p.position
+            hoof = None
+            for ty_ in (half_h - 4.0, -(half_h - 4.0)):
+                tx_ = clamp(gx_def + 58.0, -half_w, half_w)
+                room = lane_room(px, py, tx_, ty_)
+                if hoof is None or room > hoof[0]:
+                    hoof = (room, tx_, ty_)
+            _, tx_, ty_ = hoof
+            dx, dy = tx_ - px, ty_ - py
+            l = hyp(dx, dy) or 1.0
+            aim = (dx / l, dy / l)
+            actions.kick(p.id, aim, 1.0, movement=aim)
+
+        # -- one action per player, every tick ---------------------------
+        for p in my:
+            pid = p.id
+            px, py = p.position
+
+            if pid == 0:
+                if keeper_rush:
+                    if obs.can_kick(pid):
+                        on_ball(p, True)
+                    else:
+                        tx, ty = meet(kx, ky)
+                        pl[pid] = PA(run_dir(px, py, tx, ty, 0.0, 1.0))
+                else:
+                    # stand on the bisector of the angle the ball makes
+                    # with the two posts, and cover where the ball would
+                    # cross the line when it is already on its way
+                    tx = gx_def + 1.6
+                    a1 = math.atan2(mouth - by, gx_def - bx)
+                    a2 = math.atan2(-mouth - by, gx_def - bx)
+                    if a1 < 0.0:
+                        a1 += 2.0 * math.pi
+                    if a2 < 0.0:
+                        a2 += 2.0 * math.pi
+                    am = 0.5 * (a1 + a2)
+                    ca = math.cos(am)
+                    if ca < -0.05:
+                        ty = by + math.sin(am) / ca * (tx - bx)
+                    else:
+                        ty = by * 0.55
+                    if bvx < -2.5 and bx > tx:
+                        tc = (tx - bx) / bvx
+                        if 0.0 < tc < 2.0:
+                            ty = by + bvy * tc
+                    ty = clamp(ty, -mouth + 1.0, mouth - 1.0)
+                    pl[pid] = PA(run_dir(px, py, tx, ty, 0.0, 1.5))
+                continue
+
+            if their_restart:
+                # hold outside their circle with a margin; nobody chases a
+                # restart — the walk back costs four seconds
+                d0 = hyp(px, py)
+                need = f.centre_circle_radius + f.player_radius + 1.5
+                if d0 < need:
+                    if d0 < 1e-6:
+                        tx, ty = need, 0.0
+                    else:
+                        tx, ty = px / d0 * need, py / d0 * need
+                    pl[pid] = PA(run_dir(px, py, tx, ty, 0.0, 2.0))
+                else:
+                    pl[pid] = PA((0.0, 0.0))
+                continue
+
+            if eff_chaser is not None and pid == eff_chaser.id:
+                if obs.can_kick(pid):
+                    on_ball(p)
+                else:
+                    tx, ty = meet(px, py)
+                    if theirs_ctrl:
+                        # take the controlled ball from the goal side
+                        dxg, dyg = gx_def - tx, -ty
+                        lg = hyp(dxg, dyg) or 1.0
+                        tx += dxg / lg * 1.5
+                        ty += dyg / lg * 1.5
+                    pl[pid] = PA(run_dir(px, py, tx, ty, 0.0, 1.0))
+                continue
+
+            if attack_mode:
+                spot = support_plan.get(pid)
+                if spot is None:
+                    spot = (clamp(bx - 8.0, gx_def + 8.0, gx_att - 20.0),
+                            clamp(by * 0.6, -10.0, 10.0))
+                pl[pid] = PA(run_dir(px, py, spot[0], spot[1], 3.0, 2.5))
+            elif pid == cover_id:
+                pl[pid] = PA(run_dir(px, py, cx8, cy8, 2.0, 2.0))
+            else:
+                spot = mark_map.get(pid)
+                if spot is None:
+                    spot = (clamp(bx - 10.0, gx_def + 6.0, 0.0),
+                            clamp(by * 0.5, -8.0, 8.0))
+                pl[pid] = PA(run_dir(px, py, spot[0], spot[1], 1.5, 2.0))
+
+        return actions

@@ -264,3 +264,73 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - timeout counts vary with machine load — environmental, results are
   deterministic; consider trimming per-tick work if the grading machine
   is slower than this one
+
+## v23 — same football, faster (cloud, Linux engine, 2026-10-26)
+
+- within a division the table is ordered on mean decision time, so time
+  is worth places once points are level
+- v22 measured 0.09-0.10 ms per decision (the example team 0.017, an
+  empty act 0.004); a third of it was the ball prediction and the
+  who-reaches-first search
+- v23: closed-form ball roll from a per-match table, squared reach
+  tests, first-to-reach found by walking prediction points outermost.
+  Identical scores to v22 on 680 matches (elite, tactical, possession,
+  balanced, man_marking, v17, v18); 0.077-0.086 ms per decision
+- new 200-match baseline for v22 on seeds 5000..5099 both ends: tactical
+  196-3-1, possession 192-6-2, balanced 180-19-1, man_marking 172-27-1,
+  structured_attack 193-6-1, elite 73-84-43, v18 117-60-23, v17 98-54-48
+
+## v24 — far-post runner
+
+- pool from now on: elite, v22, v18, v17, man_marking, balanced, tactical
+  (100 seeds both ends = 1400 matches; noise is about +-40 pts)
+- not taken (on v23): shot aimed at the mouth point opponents reach last,
+  9 points (3032 -> 2998) or choosing between the posts that way (3045 on
+  3000s but 3037 -> 2981 held-out); cover man double-presses a held ball
+  in our third (3023)
+- v24: once the ball is past their 30-unit line, the furthest support
+  runner goes to the far post (6 in, 5 off centre). 3000s 3032 -> 3126,
+  7000s 3037 -> 3118, 8000s 3021 -> 3141. elite is flat to slightly down
+  (315 -> 307 on 8000s); the gains are against v22/v18/v17, the closest
+  stand-ins for strong class teams
+- runner variants on 3000s (v24 = 3126): trigger 40 3088, trigger 22
+  3090, 9 in 3154, 4 in 3038, 2.5 off centre 3000 — none clearly better
+- also on v24 (3000s, v24 = 3126), not taken: a second runner at the
+  edge of the box for the cut-back 3043; safety man at bx-10 instead of
+  bx-14 in the final third 3092
+
+## v25 — v24, cheaper
+
+- the ladder (read 2026-10-26 22:40 UTC) had the old 22 October upload
+  at 196th of 267, division 10, 74-115-671, 0.50 ms per decision.
+  Division 1 = top 20, about 2.3-2.8 pts per match, 0.07-0.37 ms
+- v25: field constants cached per match, support-lane loop trimmed
+  (no sqrt/generator per lane, runner's lane not computed). Identical
+  scores to v24 on 500 matches; 0.074 -> 0.066 ms locally
+
+## Ladder reality check (2026-10-27)
+
+- v25 on the ladder: 186-203 of 270, 0.63-0.67 pts/match, 0.17 ms.
+  It beats every baseline and both lecturers but loses most series to
+  classmates. The local pool (elite, baselines, own versions) does not
+  look like the class: class mean 51 dribbles and 12 completed passes a
+  match, #1 completes 40 and scores 2.8 from 4 shots
+- #1 (Gabriel_Behane) replays: pressed players pass back or sideways at
+  full power, free players dribble forward, shots from 9-21, keeper
+  about 7 out when the ball is in its half, three outfielders drop
+  behind the ball when defending
+- v25 vs classmates: ~70% of our full-power kicks go to them, medium
+  passes land ~80%
+- v26 (candidates/v26: shots only inside 30, PASS_T 6, full-power pass
+  option to 60, keeper passes out): 0-3-25 in its first 28 ladder
+  matches, 0.11 pts/match. Abandoned
+- v26 replays: of 44 shots from inside 26, 21 hit our own players
+  (runners in the mouth), 21 hit opponents parked on the posts; 1 goal
+- v27 (candidates/v27) = v25 + lane-checked close shots (7 points
+  across the mouth, 1.6 clear of every body incl. ours) + pressed
+  players pass. Local pool 1499 (v25 1557), tactical 99-1-0
+- 2026-10-27 19:09 UTC, the v27 upload on the ladder: #166 of 275,
+  division 9, 117-112-603 (463 pts from 832), 0.184 ms, goals 347-1832.
+  Best placing so far (v25 was 186-203). Kept as the final submission.
+  Still conceding 2.2 a match (league 1.41) and dribbling 6.6 a match
+  (league 56): the next real gains are defence and close control
