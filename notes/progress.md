@@ -307,3 +307,25 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - v25: field constants cached per match, support-lane loop trimmed
   (no sqrt/generator per lane, runner's lane not computed). Identical
   scores to v24 on 500 matches; 0.074 -> 0.066 ms locally
+
+## Ladder reality check (2026-10-27)
+
+- v25 on the ladder: 186-203 of 270, 0.63-0.67 pts/match, 0.17 ms.
+  It beats every baseline and both lecturers but loses most series to
+  classmates. The local pool (elite, baselines, own versions) does not
+  look like the class: class mean 51 dribbles and 12 completed passes a
+  match, #1 completes 40 and scores 2.8 from 4 shots
+- #1 (Gabriel_Behane) replays: pressed players pass back or sideways at
+  full power, free players dribble forward, shots from 9-21, keeper
+  about 7 out when the ball is in its half, three outfielders drop
+  behind the ball when defending
+- v25 vs classmates: ~70% of our full-power kicks go to them, medium
+  passes land ~80%
+- v26 (candidates/v26: shots only inside 30, PASS_T 6, full-power pass
+  option to 60, keeper passes out): 0-3-25 in its first 28 ladder
+  matches, 0.11 pts/match. Abandoned
+- v26 replays: of 44 shots from inside 26, 21 hit our own players
+  (runners in the mouth), 21 hit opponents parked on the posts; 1 goal
+- v27 (candidates/v27) = v25 + lane-checked close shots (7 points
+  across the mouth, 1.6 clear of every body incl. ours) + pressed
+  players pass. Local pool 1499 (v25 1557), tactical 99-1-0
