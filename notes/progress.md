@@ -329,3 +329,8 @@ kickoff shape is the whole difference. 3 points a win, 1 a draw:
 - v27 (candidates/v27) = v25 + lane-checked close shots (7 points
   across the mouth, 1.6 clear of every body incl. ours) + pressed
   players pass. Local pool 1499 (v25 1557), tactical 99-1-0
+- 2026-10-27 19:09 UTC, the v27 upload on the ladder: #166 of 275,
+  division 9, 117-112-603 (463 pts from 832), 0.184 ms, goals 347-1832.
+  Best placing so far (v25 was 186-203). Kept as the final submission.
+  Still conceding 2.2 a match (league 1.41) and dribbling 6.6 a match
+  (league 56): the next real gains are defence and close control
